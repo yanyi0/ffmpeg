@@ -36,7 +36,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 win{
 
-  FFMPEG_HOME = ..
+  FFMPEG_HOME = D:/FFMpeg/SDL2-2.0.14/x86_64-w64-mingw32
 
 }
 

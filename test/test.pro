@@ -17,12 +17,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp \
-    playthread.cpp
+    mainwindow.cpp
 
 HEADERS += \
-    mainwindow.h \
-    playthread.h
+    mainwindow.h
 
 FORMS += \
     mainwindow.ui
@@ -31,16 +29,3 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-win32 {
-   SDL_HOME = D:/FFMpeg/SDL2-2.0.14/x86_64-w64-mingw32
-}
-
-macx {
-   SDL_HOME = /usr/local/Cellar/sdl2/2.0.14_1
-}
-
-INCLUDEPATH = $${SDL_HOME}/include
-
-LIBS += -L $${SDL_HOME}/lib \
-        -lSDL2
