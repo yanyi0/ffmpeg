@@ -99,8 +99,6 @@ void AudioThread::run(){
     }
 
     //文件名
-    //std::string str = FILE_PATH;
-    //str += ".pcm";
     QString  pcmFilename = FILE_PATH;
     pcmFilename += QDateTime::currentDateTime().toString("yyyy-MM-dd_hh_mm_ss");
     QString wavFilename = pcmFilename;
@@ -108,17 +106,54 @@ void AudioThread::run(){
     wavFilename += ".wav";
 
     //文件
-    QFile pcmFile(pcmFilename);
+    QFile wavFile(wavFilename);
     //WriteOnly:只写模式。如果文件不存在，就创建文件;如果文件存在，就删除文件内容
-    if(!pcmFile.open(QFile::WriteOnly)){
+    if(!wavFile.open(QFile::ReadWrite)){
         qDebug() << "文件打开失败" << pcmFilename;
         //关闭设备
         avformat_close_input(&ctx);
         return;
     }
 
-    //暂定只采集50个数据包,包太小可能导致时间太短50个包 205K,500个包 2M
-    //int count = 500;
+    //获取设备参数
+    //获取输入流
+    AVStream *stream = ctx->streams[0];
+    //获取音频参数
+    AVCodecParameters *params = stream->codecpar;
+    //声道数
+    qDebug() << params->channels;
+    //采样率
+    qDebug() << params->sample_rate;
+    //采样格式 16 * 2/8 = 4字节
+    qDebug() << params->format;//获取为-1
+    //每一个样本的一个声道占用多少个字节
+    qDebug() << "av_get_bytes_per_sample" << av_get_bytes_per_sample((AVSampleFormat) params->format);
+    //采样格式
+    qDebug() <<  "params->codec_id" << params->codec_id;
+    //采样格式name pcm_f32le
+    qDebug() << "avcodec_get_name" << avcodec_get_name(params->codec_id);
+    qDebug() << "av_get_sample_fmt" << av_get_sample_fmt(avcodec_get_name(params->codec_id));
+    //每一个样本的一个声道占用多少个字节
+    qDebug() << "av_get_bits_per_sample" << av_get_bits_per_sample(params->codec_id);
+
+    //pcm 转 wav
+    WAVHeader wavHead;
+
+    qDebug() << sizeof (WAVHeader);
+    //声道 2
+    wavHead.nubmerChannels =params->channels;
+    //采样率
+    wavHead.sampleRate = params->sample_rate;
+    //位深度
+    wavHead.bitsPerSample =  av_get_bits_per_sample(params->codec_id);
+    //字节率
+    wavHead.byteRate = params->sample_rate * av_get_bits_per_sample(params->codec_id) * 2/8;
+    //一个样本所占的字节数
+    wavHead.blockAlign = av_get_bits_per_sample(params->codec_id) * 2 /8;
+    //浮点型为3，PCM为1
+    wavHead.audioFormat = (params->codec_id >= AV_CODEC_ID_PCM_F32BE) ? 3 : 1;
+
+    wavFile.write((const char *)&wavHead,sizeof(WAVHeader));
     //数据包
     AVPacket pkt;
     //从设备中采集数据
@@ -129,7 +164,7 @@ void AudioThread::run(){
         if( ret == 0){//读取成功
             //qDebug() << "采集数据中" << pkt.size;
             //写入数据
-            pcmFile.write((const char *)pkt.data,pkt.size);
+            wavFile.write((const char *)pkt.data,pkt.size);
         }else if (ret == AVERROR(EAGAIN)){
             continue;
         }else{
@@ -138,59 +173,56 @@ void AudioThread::run(){
             av_strerror(ret,errorbuf,sizeof(errorbuf));
             qDebug() << "av_read_frame error" << errorbuf << ret;
         }
-    }
+      }
+
+      int allSize = wavFile.size();
+      qDebug() << "文件总大小-------------" << allSize;
+      //文件总大小减8
+      int chunkDataSize = allSize - 8;
+      qDebug() << "chunkDataSize大小-------------" << chunkDataSize;
+      //dataChunkDataSize
+      int dataChunkDataSize = allSize - 44;
+      qDebug() << "dataChunkDataSize大小-------------" << dataChunkDataSize;
+
+
+      if(wavFile.seek(4) == true){
+
+//           QByteArray abyte0;
+//           abyte0.resize(4);
+//           abyte0[0] = (uchar)  (0x000000ff & chunkDataSize);
+//           abyte0[1] = (uchar) ((0x0000ff00 & chunkDataSize) >> 8);
+//           abyte0[2] = (uchar) ((0x00ff0000 & chunkDataSize) >> 16);
+//           abyte0[3] = (uchar) ((0xff000000 & chunkDataSize) >> 24);
+
+//           qDebug() << abyte0;
+
+//           qDebug() << abyte0.toHex();
+
+//           wavFile.write(abyte0);
+
+          wavFile.write((char *)&chunkDataSize,4);
+
+           if(wavFile.seek(40)){
+//               QByteArray abyte1;
+//               abyte1.resize(4);
+//               abyte1[0] = (uchar)  (0x000000ff & dataChunkDataSize);
+//               abyte1[1] = (uchar) ((0x0000ff00 & dataChunkDataSize) >> 8);
+//               abyte1[2] = (uchar) ((0x00ff0000 & dataChunkDataSize) >> 16);
+//               abyte1[3] = (uchar) ((0xff000000 & dataChunkDataSize) >> 24);
+
+//               qDebug() << abyte1;
+
+//               qDebug() << abyte1.toHex();
+
+//               wavFile.write(abyte1);
+
+                 wavFile.write((char *)&dataChunkDataSize,4);
+           }
+      }
+
 
       //关闭文件
-      pcmFile.close();
-
-      //获取设备参数
-      //获取输入流
-      AVStream *stream = ctx->streams[0];
-      //获取音频参数
-      AVCodecParameters *params = stream->codecpar;
-      //声道数
-      qDebug() << params->channels;
-      //采样率
-      qDebug() << params->sample_rate;
-      //采样格式 16 * 2/8 = 4字节
-      qDebug() << params->format;//获取为-1
-      //每一个样本的一个声道占用多少个字节
-      qDebug() << "av_get_bytes_per_sample" << av_get_bytes_per_sample((AVSampleFormat) params->format);
-      //采样格式
-      qDebug() <<  "params->codec_id" << params->codec_id;
-      //采样格式name pcm_f32le
-      qDebug() << "avcodec_get_name" << avcodec_get_name(params->codec_id);
-      qDebug() << "av_get_sample_fmt" << av_get_sample_fmt(avcodec_get_name(params->codec_id));
-      //每一个样本的一个声道占用多少个字节
-      qDebug() << "av_get_bits_per_sample" << av_get_bits_per_sample(params->codec_id);
-
-      //pcm 转 wav
-      WAVHeader wavHead;
-
-      qDebug() << sizeof (WAVHeader);
-      //声道 2
-      wavHead.nubmerChannels =params->channels;
-      //采样率
-      wavHead.sampleRate = params->sample_rate;
-      //位深度
-      wavHead.bitsPerSample =  av_get_bits_per_sample(params->codec_id);
-      //字节率
-      wavHead.byteRate = params->sample_rate * av_get_bits_per_sample(params->codec_id) * 2/8;
-      //一个样本所占的字节数
-      wavHead.blockAlign = av_get_bits_per_sample(params->codec_id) * 2 /8;
-
-      int allSize = pcmFile.size();
-
-      qDebug() << "文件总大小" << allSize;
-       //dataChunkDataSize
-      wavHead.dataChunkDataSize = allSize;
-      //文件总大小减8
-      wavHead.chunkDataSize = allSize + 44 - 8;
-      //浮点型为3，PCM为1
-      wavHead.audioFormat = (params->codec_id >= AV_CODEC_ID_PCM_F32BE) ? 3 : 1;
-
-      //QString中含有中文要进去转码，否则文件打开失败
-      FFmpegs::pcmToWav(wavHead,pcmFilename.toLocal8Bit().constData(),wavFilename.toLocal8Bit().constData());
+      wavFile.close();
 
       qDebug() << this << "线程正常结束";
 

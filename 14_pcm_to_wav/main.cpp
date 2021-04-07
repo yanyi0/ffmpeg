@@ -16,8 +16,8 @@ extern "C" {
 #define BITSPERSAMPLE 16
 #else
 #define BITSPERSAMPLE 32
-#define PCMFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PcmToWav/MyHeartWillGoOnLoavAll.pcm"
-#define WAVFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PcmToWav/MyHeartWillGoOnLoavAll.wav"
+#define PCMFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PcmToWav/Myheartwillgoon3.pcm"
+#define WAVFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PcmToWav/Myheartwillgoon3-f32le-audioformat3.wav"
 #endif
 int main(int argc, char *argv[])
 {
@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
     wavHead.bitsPerSample = BITSPERSAMPLE;
 //    //dataChunkDataSize
 //    wavHead.dataChunkDataSize = 3676288;
+    //pcm为1， 浮点型为3
+    wavHead.audioFormat = 3;
 
     QFile pcmFile(PCMFILENAME);
     int allSize = pcmFile.size();
