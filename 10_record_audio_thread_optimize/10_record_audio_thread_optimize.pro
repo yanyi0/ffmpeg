@@ -32,14 +32,14 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win{
+win32v {
 
   FFMPEG_HOME = ..
 
 }
 
-macx{
-  FFMPEG_HOME = /usr/local/Cellar/ffmpeg/4.3.2
+macx {
+  FFMPEG_HOME = /usr/local/ffmpeg
   #申请权限的功能，在没打包之前，要在debug调试模式下才能运行
   QMAKE_INFO_PLIST = mac/Info.plist
 }

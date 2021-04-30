@@ -97,6 +97,7 @@ void AudioThread::run(){
             file.write((const char *)pkt.data,pkt.size);
 //            count --;
         }
+        av_packet_unref(&pkt);
     }
     //关闭文件
     file.close();
