@@ -32,9 +32,9 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win{
+win32 {
 
-  FFMPEG_HOME = ..
+  FFMPEG_HOME = D:\FFMpeg\ffmpeg-4.3.2
 
 }
 
