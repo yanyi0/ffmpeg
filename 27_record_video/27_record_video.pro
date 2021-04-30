@@ -17,13 +17,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     audiothread.cpp \
-    ffmpegs.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     audiothread.h \
-    ffmpegs.h \
     mainwindow.h
 
 FORMS += \
@@ -50,7 +48,8 @@ INCLUDEPATH = $${FFMPEG_HOME}/include
 LIBS += -L $${FFMPEG_HOME}/lib \
         -lavdevice \
         -lavformat \
-        -lavutil
+        -lavutil \
+        -lavcodec
 
 #DISTFILES += \
 #    mac/Info.plist

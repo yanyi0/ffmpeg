@@ -9,9 +9,7 @@ class AudioThread : public QThread
 public:
     explicit AudioThread(QObject *parent = nullptr);
     ~AudioThread();
-    void setStop(bool stop);
 private:
-    bool _stop = false;
     void run();
 
 signals:

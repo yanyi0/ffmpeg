@@ -24,24 +24,27 @@ void MainWindow::on_audioButton_clicked()
 {
     qDebug() << "点击按钮 on_audioButton_clicked" << QThread::currentThread();
     if(_audioThread == nullptr){//点击了开始录音
-        qDebug() << "开始录音";
+        qDebug() << "开始录视频";
         //开启线程
         _audioThread = new AudioThread(this);
         _audioThread->start();
         //线程非正常退出，按钮文字改为开始录音，同时指针置为nil，防止下次点击访问空指针对象
         connect(_audioThread,&AudioThread::finished,[this](){
            //线程结束
-            this->ui->audioButton->setText("开始录音");
-            this->_audioThread = nullptr;
+            ui->audioButton->setText("开始录视频");
+            ui->audioButton->repaint();
+            _audioThread = nullptr;
         });
         //设置按钮文字
-        ui->audioButton->setText("结束录音");
+        ui->audioButton->setText("结束录视频");
+        ui->audioButton->repaint();
       }else{//点击了结束录音
          //结束线程
 //        _audioThread->setStop(true);
         _audioThread->requestInterruption();
         _audioThread = nullptr;
         //设置按钮文字
-        ui->audioButton->setText("开始录音");
+        ui->audioButton->setText("开始录视频");
+        ui->audioButton->repaint();
       }
 }
