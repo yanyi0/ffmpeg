@@ -125,7 +125,7 @@ void AudioThread::run(){
         if( ret == 0){//读取成功
             //qDebug() << "采集数据中" << pkt.size;
             //写入数据
-            file.write((const char *)pkt->data,pkt->size);
+            file.write((const char *)pkt->data,imageSize);
             qDebug() << pkt->size;
             //释放资源
             av_packet_unref(pkt);
