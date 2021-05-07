@@ -23,7 +23,7 @@ extern "C" {
 #else
   #define FMT_NAME "avfoundation"
   #define DEVICE_NAME ":0"
-  #define FILE_NAME "/Users/cloud/documents/iOS/音视频/TestMusic/out123456789.pcm"
+  #define FILE_NAME "/Users/cloud/documents/iOS/音视频/TestMusic/RecordPcm/out123456789.pcm"
 #endif
 
 MainWindow::MainWindow(QWidget *parent)
@@ -97,6 +97,8 @@ void MainWindow::on_audioButton_clicked()
             file.write((const char *)pkt.data,pkt.size);
             count --;
         }
+        //必须要加，释放pkt内部的资源
+        av_packet_unref(&pkt);
     }
     //关闭文件
     file.close();

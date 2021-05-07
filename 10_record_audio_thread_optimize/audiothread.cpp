@@ -106,6 +106,8 @@ void AudioThread::run(){
             av_strerror(ret,errorbuf,sizeof(errorbuf));
             qDebug() << "av_read_frame error" << errorbuf << ret;
         }
+        //必须要加，释放pkt内部的资源
+        av_packet_unref(&pkt);
     }
     //关闭文件
     file.close();

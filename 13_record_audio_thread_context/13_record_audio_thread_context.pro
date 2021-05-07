@@ -37,8 +37,13 @@ win32 {
   FFMPEG_HOME = D:\FFMpeg\ffmpeg-4.3.2
 }
 
+<<<<<<< HEAD
 macx {
   FFMPEG_HOME = /usr/local/Cellar/ffmpeg/4.3.2
+=======
+macx{
+  FFMPEG_HOME = /usr/local/ffmpeg
+>>>>>>> 919bee8a5c9f28c648b8024c7fdd59a260c077ae
   #申请权限的功能，在没打包之前，要在debug调试模式下才能运行
   QMAKE_INFO_PLIST = mac/Info.plist
 }
@@ -49,5 +54,5 @@ LIBS += -L $${FFMPEG_HOME}/lib \
         -lavformat \
         -lavutil
 
-#DISTFILES += \
-#    mac/Info.plist
+DISTFILES += \
+    mac/Info.plist
