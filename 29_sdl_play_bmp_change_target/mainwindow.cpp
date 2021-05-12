@@ -25,10 +25,11 @@ SDL_Texture* MainWindow::createTexture(SDL_Renderer *renderer){
     if(!texture) return nullptr;
     //设置纹理为渲染目标
     if(SDL_SetRenderTarget(renderer,texture)) return nullptr;
-    //设置颜色
-//    if(SDL_SetRenderDrawColor(renderer,0,255,0,255)) return nullptr;
-//    if(SDL_RenderClear(renderer)) return nullptr;
-    //设置颜色
+    //设置纹理背景颜色
+    if(SDL_SetRenderDrawColor(renderer,0,0,255,255)) return nullptr;
+    //将纹理背景框颜色清理
+    if(SDL_RenderClear(renderer)) return nullptr;
+    //设置画笔颜色(绘制矩形框线条的颜色）
     if(SDL_SetRenderDrawColor(renderer,255,255,0,SDL_ALPHA_OPAQUE)) return nullptr;
     //画图形
     SDL_Rect rect = {0,0,50,50};
@@ -40,18 +41,21 @@ SDL_Texture* MainWindow::createTexture(SDL_Renderer *renderer){
 }
 void MainWindow::showClick(SDL_Event &event,SDL_Renderer *renderer,SDL_Texture *texture){
      SDL_MouseButtonEvent btn = event.button;
+     //跟随鼠标点击的位置复制矩形框
+//     int x = btn.x;
+//     int y = btn.y;
      int w = 0;
      int h = 0;
      if(SDL_QueryTexture(texture,nullptr,nullptr,&w,&h)) return;
      int x = btn.x - (w >> 1);
      int y = btn.y - (w >> 1);
      SDL_Rect dstRect = {x,y,w,h};
-     //清除
+     //清除之前的纹理
      if(SDL_RenderClear(renderer)) return;
      //复制纹理到渲染目标
      SDL_RenderCopy(renderer,texture,nullptr,&dstRect);
-     //画矩形框
-//     SDL_SetRenderDrawColor(renderer,0,255,255,255);
+     //画矩形框：点哪里就画一个矩形框
+//     SDL_SetRenderDrawColor(renderer,0,0,255,255);
 //     SDL_RenderDrawRect(renderer,&dstRect);
      //更新渲染操作到屏幕上
      SDL_RenderPresent(renderer);
@@ -78,9 +82,9 @@ void MainWindow::on_playButton_clicked()
                  SDL_WINDOWPOS_UNDEFINED,
                  //窗口Y
                  SDL_WINDOWPOS_UNDEFINED,
-                 //窗口宽度和图片宽度一致
+                 //窗口宽度
                  500,
-                 //窗口高度和图片高度一致
+                 //窗口高度
                  500,
                  //显示窗口
                  SDL_WINDOW_SHOWN
@@ -95,13 +99,13 @@ void MainWindow::on_playButton_clicked()
      }
      //创建纹理
      texture = createTexture(renderer);
-     END(!texture,SDL_CreateTextureFromSurface);
-     //设置渲染目标为window
+     END(!texture,createTexture);
+     //设置渲染目标为window,否则无法将纹理拷贝到窗口上
      END(SDL_SetRenderTarget(renderer,nullptr),SDL_SetRenderTarget);
      //设置绘制颜色(画笔颜色)
-//     END(SDL_SetRenderDrawColor(renderer,255,0,0,SDL_ALPHA_OPAQUE),SDL_SetRenderDrawColor);
+     END(SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE),SDL_SetRenderDrawColor);
 //     //用绘制颜色(画笔颜色)DrawColor清除渲染目标
-//     END(SDL_RenderClear(renderer),SDL_RenderClear);
+     END(SDL_RenderClear(renderer),SDL_RenderClear);
      //拷贝纹理到渲染目标上
      END(SDL_RenderCopy(renderer,texture,nullptr,&dstRect),SDL_RenderCopy);
 //     //将此前所有需要渲染的内容更新到屏幕上
