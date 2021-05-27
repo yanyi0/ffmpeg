@@ -10,7 +10,7 @@ extern "C" {
 
 #ifdef Q_OS_WIN
 #define INFILENAME "D:/音视频/TestMusic/H264_Code/out.yuv"
-#define OUTFILENAME "D:/音视频/TestMusic/H264_Code/out_win.yuv"
+#define OUTFILENAME "D:/音视频/TestMusic/H264_Code/out_win_nopixelfromat.h264"
 #else
 #define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out.yuv"
 #define OUTFILENAME ""/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out_nopixelformat.h264""
@@ -53,7 +53,8 @@ void AudioThread::run(){
     //输入参数
     VideoEncodeSpec in;
     in.filename = INFILENAME;
-    in.pixelFmt = AV_PIX_FMT_YUV420P;
+    //注意windows默认不传值的情况下，是YUV420p亲测有效，后面的流程正常执行会生成H264文件"，Mac上没有这个方法，不传会报错
+//    in.pixelFmt = AV_PIX_FMT_YUV420P;
     in.width = 768;
     in.height = 432;
     in.fps = 23;
