@@ -8,6 +8,14 @@ extern "C" {
    #include <libavformat/avformat.h>
 }
 
+#ifdef Q_OS_WIN
+#define INFILENAME "D:/音视频/TestMusic/H264_Code/out.yuv"
+#define OUTFILENAME "D:/音视频/TestMusic/H264_Code/out_win.yuv"
+#else
+#define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out.yuv"
+#define OUTFILENAME ""/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out_nopixelformat.h264""
+#endif
+
 AudioThread::AudioThread(QObject *parent) : QThread(parent)
 {
     //监听到线程结束，自己调用delete
@@ -44,12 +52,12 @@ void freeResources(){
 void AudioThread::run(){
     //输入参数
     VideoEncodeSpec in;
-    in.filename = "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out.yuv";
+    in.filename = INFILENAME;
     in.pixelFmt = AV_PIX_FMT_YUV420P;
     in.width = 768;
     in.height = 432;
     in.fps = 23;
-    FFmpegs::h264Encode(in,"/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out_nopixelformat.h264");
+    FFmpegs::h264Encode(in,OUTFILENAME);
 }
 
 
