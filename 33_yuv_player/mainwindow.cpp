@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #ifdef Q_OS_WIN32
-#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/in.bmp"
+#define FILENAME "D:/音视频/TestMusic/RecordVideo/record640x480yuv.yuv"
 #else
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/RecordVideo/out3.yuv"
 #endif
@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     //创建播放器
     _player = new YuvPlayer(this);
-    int w = 600;
+    int w = 800;
     int h = 600;
     int x = (width()-w) >> 1;
     int y = (height()-h) >> 1;
@@ -21,9 +21,9 @@ MainWindow::MainWindow(QWidget *parent)
     //设置需要播放的文件
     Yuv yuv = {
        FILENAME,
-        1280,
-        720,
-        AV_PIX_FMT_UYVY422,
+        640,
+        480,
+        AV_PIX_FMT_YUYV422,
         30
     };
     _player->setYuv(yuv);
@@ -47,5 +47,5 @@ void MainWindow::on_playButton_clicked()
 
 void MainWindow::on_stopButton_clicked()
 {
-    _player->stop();
+//    _player->stop();
 }

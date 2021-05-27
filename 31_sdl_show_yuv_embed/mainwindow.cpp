@@ -11,7 +11,7 @@
     goto end; \
 }
 #ifdef Q_OS_WIN32
-#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/in.bmp"
+#define FILENAME "D:/Dev/ffmpeg/ffmpeg/Picture/out_yuv420p.yuv"
 #else
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/outyuv420p.yuv"
 #endif
@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     _widget = new QWidget(this);
-    _widget->setGeometry(100,0,512,512);
+    _widget->setGeometry(190,0,512,512);
 }
 
 MainWindow::~MainWindow()
@@ -43,8 +43,9 @@ void MainWindow::showWindow(){
     //初始化video子系统
     END(SDL_Init(SDL_INIT_VIDEO),SDL_Init);
 
-    //创建窗口
-//  window = SDL_CreateWindowFrom((void *)ui->label->winId());
+    //创建窗口:图片盖在label下面了
+//    window = SDL_CreateWindowFrom((void *)ui->label->winId());
+
     window = SDL_CreateWindowFrom((void *)_widget->winId());
     END(!window,SDL_CreateWindowFrom);
     //创建渲染上下文(默认的渲染目标是window)
@@ -74,7 +75,7 @@ void MainWindow::showWindow(){
     //监听等待退出事件
     while(1){
         SDL_Event event;
-        qDebug() << event.type << "事件";
+//        qDebug() << event.type << "事件";
         END(!SDL_WaitEvent(&event),SDL_WaitEvent);
                 switch (event.type){
                    case SDL_QUIT:
@@ -93,7 +94,9 @@ void MainWindow::on_playButton_clicked()
 {
        //Mac主线程无法更新UI
 //     PlayThread *playTherad = new PlayThread((void *)ui->label->winId(),this);
-//     playTherad->start();
-       showWindow();
+    //窗口放大变小，图片消失
+      PlayThread *playTherad = new PlayThread((void *)_widget->winId(),this);
+     playTherad->start();
+//       showWindow();
 
 }

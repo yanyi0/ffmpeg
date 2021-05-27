@@ -9,7 +9,7 @@
     goto end; \
 }
 #ifdef Q_OS_WIN32
-#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/in.bmp"
+#define FILENAME "D:/Dev/ffmpeg/ffmpeg/Picture/out_yuv420p.yuv"
 #else
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/outyuv420p.yuv"
 #endif
@@ -71,7 +71,7 @@ void PlayThread::run(){
     //监听等待退出事件
     while(!isInterruptionRequested()){
         SDL_Event event;
-        qDebug() << event.type << "事件";
+//        qDebug() << event.type << "事件";
         END(!SDL_WaitEvent(&event),SDL_WaitEvent);
                 switch (event.type){
                    case SDL_QUIT:

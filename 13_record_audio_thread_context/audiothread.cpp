@@ -2,6 +2,7 @@
 #include <QFile>
 #include <QThread>
 #include <QTime>
+#include <QDebug>
 
 extern "C" {
    //设备
@@ -12,13 +13,15 @@ extern "C" {
    #include <libavutil/avutil.h>
 }
 
-#ifdef Q_QS_WIN
+#ifdef Q_OS_WIN32
   //格式名称
   #define FMT_NAME "dshow"
   //设备名称
-  #define DEVICE_NAME ""
+  #define DEVICE_NAME "麦克风阵列 (IDT High Definition Audio CODEC)"
   //PCM文件的文件名
-  #define FILE_NAME "F:/out.pcm"
+  #define FILE_NAME "D:/音视频/TestMusic/RecordToPlay/out.pcm"
+  //生成文件路径
+  #define FILE_PATH "D:/音视频/TestMusic/RecordToPlay/"
 #else
   #define FMT_NAME "avfoundation"
   #define DEVICE_NAME ":0"

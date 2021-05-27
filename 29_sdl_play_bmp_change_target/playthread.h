@@ -11,6 +11,7 @@ class PlayThread : public QThread
 public:
     explicit PlayThread(QObject *parent = nullptr);
     SDL_Texture * createTexture(SDL_Renderer *renderer);
+    void showClick(SDL_Event &event,SDL_Renderer *renderer,SDL_Texture *texture);
     ~PlayThread();
     void run() override;
 

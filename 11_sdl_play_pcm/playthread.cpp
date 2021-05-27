@@ -13,8 +13,14 @@
 #define SAMPLE_SIZE 32
 //音频缓冲区的样本数量
 #define SAMPLE 1024
+
+#ifdef Q_OS_WIN32
+#define FILENAME "D:/音视频/TestMusic/PlayPcm/out3.pcm"
+#else
 //文件路径
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/in111-s16le.pcm"
+#endif
+
 //音频缓冲区的大小
 #define BUFFER_SIZE 4096
 

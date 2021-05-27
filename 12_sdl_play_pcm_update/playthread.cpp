@@ -5,8 +5,7 @@
 
 //采样率
 #define SAMPLE_RATE 44100
-//采样格式
-#define SAMPLE_FORMAT AUDIO_F32LSB
+
 //采样大小
 //#define SAMPLE_SIZE 16
 #define SAMPLE_SIZE SDL_AUDIO_BITSIZE(SAMPLE_FORMAT)
@@ -17,7 +16,13 @@
 #define SAMPLES 1024
 //4096*8是音频缓冲区的极限样本数量，若再大程序直接退出
 //#define SAMPLES 4096*8
+#ifdef Q_OS_WIN32
+#define FILENAME "D:/音视频/TestMusic/PlayPcm/out1.pcm"
+//采样格式
+#define SAMPLE_FORMAT AUDIO_S16LSB
+#else
 //文件路径
+#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/in111-s16le.pcm"
 //#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/in111-s16le.pcm"
 //#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/in-f32le.pcm"
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/in1-f32le.pcm"
@@ -26,6 +31,9 @@
 //#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/myheart-s16le-new.pcm"
 //#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/StayHereForever-f32le.pcm"
 //#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayPcm/Perfect-f32le.pcm"
+//采样格式
+#define SAMPLE_FORMAT AUDIO_F32LSB
+#endif
 //每个样本占用多少个字节
 #define BYTES_PER_SAMPLE ((SAMPLE_SIZE * CHANNELS)/8)
 //相当于右移3位
@@ -104,7 +112,7 @@ void PlayThread::run(){
     //声道数
     spec.channels = CHANNELS;
     //采样格式(f32le)
-    spec.format = AUDIO_F32LSB;
+    spec.format = SAMPLE_FORMAT;
     //音频缓冲区的样本数量(这个值必须是2的幂)
     spec.samples = SAMPLES;
     //回调
