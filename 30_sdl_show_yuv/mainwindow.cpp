@@ -11,7 +11,7 @@
     goto end; \
 }
 #ifdef Q_OS_WIN32
-#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/in.bmp"
+#define FILENAME "D:/音视频/TestMusic/RecordVideo/record640x480yuv.yuv"
 #else
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/outyuv420p.yuv"
 #endif
@@ -108,8 +108,7 @@ end:
 void MainWindow::on_playButton_clicked()
 {
        //Mac主线程无法更新UI
-//     PlayThread *playTherad = new PlayThread;
-//     playTherad->start();
-       showWindow();
-
+     PlayThread *playTherad = new PlayThread;
+     playTherad->start();
+//       showWindow();
 }

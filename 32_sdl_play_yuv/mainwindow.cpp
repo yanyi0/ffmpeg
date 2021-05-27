@@ -10,13 +10,13 @@
     return; \
 }
 #ifdef Q_OS_WIN32
-#define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/PlayVideo/in.bmp"
+#define FILENAME "D:/音视频/TestMusic/RecordVideo/record640x480yuv.yuv"
 #else
 #define FILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/RecordVideo/out3.yuv"
 #endif
-#define PIXEL_FORMAT SDL_PIXELFORMAT_UYVY
-#define IMG_W 1280
-#define IMG_H 720
+#define PIXEL_FORMAT SDL_PIXELFORMAT_YUY2
+#define IMG_W 640
+#define IMG_H 480
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)

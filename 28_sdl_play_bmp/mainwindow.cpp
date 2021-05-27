@@ -112,8 +112,6 @@ end:
 }
 void MainWindow::on_playButton_clicked()
 {
-//     PlayThread *playTherad = new PlayThread;
-//     playTherad->start();
-       showWindow();
-
+     PlayThread *playTherad = new PlayThread;
+     playTherad->start();
 }

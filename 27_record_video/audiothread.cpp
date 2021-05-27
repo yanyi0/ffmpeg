@@ -15,13 +15,13 @@ extern "C" {
 #define SAMPLERATE 44100
 //声道
 #define NUMBERCHANNELS 2
-#ifdef Q_QS_WIN
+#ifdef Q_OS_WIN32
   //格式名称
   #define FMT_NAME "dshow"
   //设备名称
-  #define DEVICE_NAME "video="
+  #define DEVICE_NAME "video=Integrated Webcam"
   //YUV文件的文件名
-  #define FILENAME "D :/out.yuv"
+  #define FILENAME "D:/音视频/TestMusic/RecordVideo/record640x480yuv.yuv"
 #else
   #define FMT_NAME "avfoundation"
   #define DEVICE_NAME "0"
@@ -82,7 +82,7 @@ void AudioThread::run(){
     AVFormatContext *ctx = nullptr;
     //设备参数
     AVDictionary *options = nullptr;
-    av_dict_set(&options,"video_size","1280x720",0);
+    av_dict_set(&options,"video_size","640x480",0);
     av_dict_set(&options,"pixel_format","yuyv422",0);
     av_dict_set(&options,"framerate","30",0);
     //打开设备

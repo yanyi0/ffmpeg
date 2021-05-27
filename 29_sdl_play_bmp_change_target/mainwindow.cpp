@@ -62,8 +62,9 @@ void MainWindow::showClick(SDL_Event &event,SDL_Renderer *renderer,SDL_Texture *
 }
 void MainWindow::on_playButton_clicked()
 {
-//     PlayThread *playTherad = new PlayThread;
-//     playTherad->start();
+     PlayThread *playTherad = new PlayThread;
+     playTherad->start();
+    /*
      //窗口
      SDL_Window *window = nullptr;
      //渲染上下文
@@ -130,5 +131,5 @@ void MainWindow::on_playButton_clicked()
      SDL_DestroyRenderer(renderer);
      SDL_DestroyWindow(window);
      SDL_Quit();
-
+     */
 }
