@@ -36,7 +36,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 win32{
 
-  FFMPEG_HOME = ..
+  FFMPEG_HOME = D:/FFMpeg/ffmpeg-4.3.2
 
 }
 

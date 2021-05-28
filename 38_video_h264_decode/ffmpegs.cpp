@@ -109,7 +109,7 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
         goto end;
     }
     //解码
-    do{
+    do{//即使到了文件尾部，也要再读取解析器中的数据，防止丢掉这一帧数据
         //读取数据
         inLen = inFile.read(inDataArray,IN_DATA_SIZE);
         inEnd = !inLen;
