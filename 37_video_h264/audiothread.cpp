@@ -53,7 +53,8 @@ void AudioThread::run(){
     //输入参数
     VideoEncodeSpec in;
     in.filename = INFILENAME;
-    //注意windows默认不传值的情况下，是YUV420p亲测有效，后面的流程正常执行会生成H264文件"，Mac上没有这个方法，不传会报错
+    //注意windows默认不传值的情况下，是YUV420p亲测有效，后面的流程正常执行会生成H264文件，因为AV_PIX_FMT_YUV420P的值默认为0
+    //而0正好是AV_PIX_FMT_YUV420P，Mac上不传的值为随机值251498416，这个随机值的格式，FFMpeg不存在，故不传会报错
 //    in.pixelFmt = AV_PIX_FMT_YUV420P;
     in.width = 768;
     in.height = 432;
