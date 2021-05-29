@@ -11,8 +11,8 @@ extern "C" {
 #define INFILENAME "D:/音视频/TestMusic/H264_Decode/out.h264"
 #define OUTFILENAME "D:/音视频/TestMusic/H264_Decode/out_win.yuv"
 #else
-#define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out.yuv"
-#define OUTFILENAME ""/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Code/out_nopixelformat.h264""
+#define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Decode/out.h264"
+#define OUTFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Decode/out_0.yuv"
 #endif
 AudioThread::AudioThread(QObject *parent) : QThread(parent)
 {
@@ -52,7 +52,7 @@ void AudioThread::run(){
     VideoDecodeSpec out;
     out.filename = OUTFILENAME;
     FFmpegs::h264Decode(INFILENAME,out);
-    qDebug() << "输出:" << out.width << out.height << out.fps << out.pixFmt;
+    qDebug() << "输出:" << out.width << out.height << out.fps << av_get_pix_fmt_name(out.pixFmt);
 }
 
 
