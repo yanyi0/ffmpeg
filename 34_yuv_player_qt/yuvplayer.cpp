@@ -26,23 +26,23 @@ YuvPlayer::State YuvPlayer::getState(){
 }
 void YuvPlayer:: play(){
     _timerId = startTimer(1000/_yuv.fps);
-    _state = YuvPlayer::Playing;
+    _state = Playing;
     qDebug() << "开启定时器";
 }
 void YuvPlayer::pause(){
     if(_timerId){
         killTimer(_timerId);
     }
-    _state = YuvPlayer::Paused;
+    _state = Paused;
 }
 void YuvPlayer::stop(){
     if(_timerId){
         killTimer(_timerId);
     }
-    _state = YuvPlayer::Stopped;
+    _state = Stopped;
 }
 bool YuvPlayer::isPlaying(){
-    return _state == YuvPlayer::Playing;
+    return _state == Playing;
 }
 void YuvPlayer::setYuv(Yuv &yuv){
     _yuv = yuv;
