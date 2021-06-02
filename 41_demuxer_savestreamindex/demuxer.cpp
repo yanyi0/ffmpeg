@@ -27,7 +27,7 @@ void Demuxer::demux(const char *inFilename,AudioDecodeSpec &aOut,VideoDecodeSpec
     //返回结果
     int ret = 0;
     //存放解码前的数据
-    AVPacket pkt;
+    AVPacket *pkt;
     //创建解封装上下文、打开文件
     ret = avformat_open_input(&_fmtCtx,inFilename,nullptr,nullptr);
     END(avformat_open_input);
@@ -54,20 +54,23 @@ void Demuxer::demux(const char *inFilename,AudioDecodeSpec &aOut,VideoDecodeSpec
         goto end;
     }
 
-    //初始化pkt
-    av_init_packet(&pkt);
-    pkt.data = nullptr;
-    pkt.size = 0;
+    //初始化pkt:4.4版本后被摧毁，用av_packet_alloc()替代
+    //定义为局部变量AVPacket *pkt指针变量,指针变量的属性用箭头，对象用.
+    pkt = av_packet_alloc();
+//    av_init_packet(&pkt);定义成AVPacket pkt;开辟栈空间
+    pkt->data = nullptr;
+    pkt->size = 0;
 
     //从输入文件中读取数据
-    while(av_read_frame(_fmtCtx,&pkt) == 0){
-        qDebug() << "当前读取到的流索引:" << pkt.stream_index;
-        if(pkt.stream_index == _aStreamIdx){//读取到的是音频数据
-            ret = decode(_aDecodeCtx,&pkt);
-        }else if(pkt.stream_index == _vStreamIdx){//读取到的是视频数据
-            ret = decode(_vDecodeCtx,&pkt);
+    while(av_read_frame(_fmtCtx,pkt) == 0){
+        qDebug() << "当前读取到的流索引:" << pkt->stream_index;
+        if(pkt->stream_index == _aStreamIdx){//读取到的是音频数据
+            ret = decode(_aDecodeCtx,pkt);
+        }else if(pkt->stream_index == _vStreamIdx){//读取到的是视频数据
+            ret = decode(_vDecodeCtx,pkt);
         }
-        av_packet_unref(&pkt);
+        //并不是释放pkt的内存，pkt还在，释放掉pkt内部指针指向的一些额外的内存
+        av_packet_unref(pkt);
         if(ret < 0)
             goto end;
     }
@@ -81,6 +84,7 @@ end:
     avcodec_free_context(&_vDecodeCtx);
     avformat_close_input(&_fmtCtx);
     av_frame_free(&_frame);
+    av_packet_free(&pkt);
 }
 //初始化解码器:根据传入的AVMediaType获取解码信息，要想外面获取到解码上下文，传入外边的解码上下文的地址，同理传入stream的地址,里面赋值后
 //外部能获取到，C语言中的指针改变传入的地址中的值
