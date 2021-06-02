@@ -123,6 +123,12 @@ int Demuxer::initDecoder(AVCodecContext **decodeCtx,int *streamIdx,AVMediaType t
 }
 //初始化音频信息
 int Demuxer::initAudioInfo(){
+    /*
+     * 命令行生成yuv和pcm  ffmpeg自带音频解码器默认输出fltp格式pcm，libfdk_aac默认输出s16le
+       ffmpeg -c:v h264 -c:a libfdk_aac -i in.mp4 cmd_out.yuv -f s16le cmd_out.pcm
+       ffmpeg自带解码器输出pcm
+       ffmpeg -c:a aac -i in.mp4  -f s16le cmd_out_aac.pcm
+     */
     //根据TYPE寻找最合适的流信息
     //初始化解码器
     int ret = initDecoder(&_aDecodeCtx,&_aStreamIdx,AVMEDIA_TYPE_AUDIO);
@@ -155,7 +161,8 @@ int Demuxer::initVideoInfo(){
     _vOut->pixFmt = _vDecodeCtx->pix_fmt;
     _vOut->width = _vDecodeCtx->width;
     _vOut->height = _vDecodeCtx->height;
-    _vOut->fps = _vDecodeCtx->framerate.num;
+    AVRational framerate = av_guess_frame_rate(_fmtCtx,_fmtCtx->streams[_vStreamIdx],nullptr);
+    _vOut->fps = framerate.num/framerate.den;
     return 0;
 }
 int Demuxer::decode(AVCodecContext *decodeCtx,AVPacket *pkt){
