@@ -58,8 +58,6 @@ private:
     void setState(State state);
     //关闭文件
     void closeFile();
-signals:
-
 };
 
 #endif // YUVPLAYER_H
