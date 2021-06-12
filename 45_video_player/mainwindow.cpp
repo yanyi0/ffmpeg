@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "QFileDialog"
-#include "QDebug"
+#include <QDebug>
+#include <QMessageBox>
 
+#pragma mark -构造，析构函数
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -11,12 +13,24 @@ MainWindow::MainWindow(QWidget *parent)
     //创建播放器
     _player = new VideoPlayer();
     connect(_player,&VideoPlayer::stateChanged,this,&MainWindow::onPlayerStateChanged);
+    connect(_player,&VideoPlayer::initFinished,this,&MainWindow::onPlayerInitFinished);
+    connect(_player,&VideoPlayer::playFailed,this,&MainWindow::onPlayerPlayFailed);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete _player;
 }
+#pragma mark -私有方法
+void MainWindow::onPlayerInitFinished(VideoPlayer *player){
+    qDebug() << player->getDuration();
+    //设置slider进度条的伸缩范围
+    ui->currentSlider->setRange(0,player->getDuration());
+    //显示时间到label上面
+    ui->durationLabel->setText(getTimeText(player->getDuration()));
+}
+
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){
     VideoPlayer::State state = player->getState();
     if(state == VideoPlayer::Playing){
@@ -32,18 +46,24 @@ void MainWindow::onPlayerStateChanged(VideoPlayer *player){
        ui->volumnSlider->setEnabled(false);
        ui->silenceBtn->setEnabled(false);
 
-       ui->currentLabel->setText("00:00:00");
+       ui->currentLabel->setText(getTimeText(0));
        ui->currentSlider->setValue(0);
-       ui->volumnSlider->setValue(ui->volumnSlider->maximum());
+       //显示打开文件的页面
+       ui->playWidget->setCurrentWidget(ui->openFilePage);
     }else{
         ui->playBtn->setEnabled(true);
         ui->stopBtn->setEnabled(true);
         ui->currentSlider->setEnabled(true);
         ui->volumnSlider->setEnabled(true);
         ui->silenceBtn->setEnabled(true);
+
+        //显示播放的页面
+        ui->playWidget->setCurrentWidget(ui->videoPage);
     }
 }
-
+void MainWindow::onPlayerPlayFailed(VideoPlayer *player){
+   QMessageBox::critical(nullptr,"提示","哦豁，播放失败!");
+}
 void MainWindow::on_stopBtn_clicked()
 {
     _player->stop();
@@ -58,12 +78,13 @@ void MainWindow::on_openFileBtn_clicked()
         //选取单个文件
         QString filename = QFileDialog::getOpenFileName(
                     this, "选择要播放的文件",
-                    "/",
+                    "/Users/cloud/Documents/iOS/音视频/TestMusic/素材/",
                     "所有文件 (*.*);;"
                     "音频文件 (*.mp3 *.aac *.wav *.flac);;"
                     "视频文件 (*.mp4 *.avi *.mkv *.rmvb *.mov)");
         qDebug() << "打开文件path=" << filename;
         if(filename.isEmpty()) return;
+        //开始播放打开的文件
         _player->setFilename(filename.toUtf8().data());
         _player->play();
         //选取多个文件
@@ -88,8 +109,9 @@ void MainWindow::on_openFileBtn_clicked()
 
 void MainWindow::on_currentSlider_valueChanged(int value)
 {
-    qDebug() << "on_currentSlider_valueChanged" << value;
-    ui->currentLabel->setText(QString("%1").arg(value));
+    ui->currentLabel->setText(getTimeText(value));
+//    ui->currentLabel->setText("00:00:00");
+//    ui->currentLabel->setText(QString("%1").arg(value));
 }
 
 void MainWindow::on_volumnSlider_valueChanged(int value)
@@ -106,4 +128,24 @@ void MainWindow::on_playBtn_clicked()
     }else{
        _player->play();
     }
+}
+QString MainWindow::getTimeText(int value){
+    //    int seconds = 5000;
+    //    int h = seconds/3600;
+    //    int m = seconds%3600/60;
+    //    int m = seconds/60%60;
+    //    int s = seconds%60;
+    int64_t seconds = value / 1000000;
+    //前面补0表明至少是两位，后面取最右边两位
+//    QString h = QString("0%1").arg(seconds/3600).right(2);
+//    QString m = QString("0%1").arg(seconds%3600/60).right(2);
+//    QString s = QString("0%1").arg(seconds%60).right(2);
+//    return QString("%1:%2:%3").arg(h).arg(m).arg(s);
+
+    //QString进行格式化
+    QLatin1Char fillChar = QLatin1Char('0');
+    return QString("%1:%2:%3")
+            .arg(seconds/3600,2,10,fillChar)
+            .arg(seconds%3600/60,2,10,fillChar)
+            .arg(seconds%60,2,10,fillChar);
 }

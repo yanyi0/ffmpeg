@@ -35,3 +35,26 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32{
+   SDL_HOME = D:/FFMpeg/SDL2-2.0.14/x86_64-w64-mingw32
+  FFMPEG_HOME = D:/FFMpeg/ffmpeg-4.3.2
+
+}
+
+macx{
+   SDL_HOME = /usr/local/Cellar/sdl2/2.0.14_1
+   FFMPEG_HOME = /usr/local/ffmpeg
+}
+INCLUDEPATH = $${FFMPEG_HOME}/include
+LIBS += -L$${FFMPEG_HOME}/lib \
+        -lswresample \
+        -lavdevice \
+        -lavformat \
+        -lavcodec \
+        -lavutil
+
+
+INCLUDEPATH += $${SDL_HOME}/include
+LIBS += -L$${SDL_HOME}/lib \
+        -lSDL2
