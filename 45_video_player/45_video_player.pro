@@ -19,14 +19,18 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     videoplayer.cpp \
+    videoplayer_audio.cpp \
+    videoplayer_video.cpp \
     videoslider.cpp \
-    videowidget.cpp
+    videowidget.cpp \
+    condmutex.cpp
 
 HEADERS += \
     mainwindow.h \
     videoplayer.h \
     videoslider.h \
-    videowidget.h
+    videowidget.h \
+    condmutex.h
 
 FORMS += \
     mainwindow.ui

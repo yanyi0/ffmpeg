@@ -84,6 +84,10 @@ void MainWindow::on_openFileBtn_clicked()
                     "视频文件 (*.mp4 *.avi *.mkv *.rmvb *.mov)");
         qDebug() << "打开文件path=" << filename;
         if(filename.isEmpty()) return;
+//        qDebug() << "------文件名-------" << filename.toUtf8().data();
+        //如果出现乱码，转成标准库中的str
+//        std::string str = filename.toStdString();
+//        const char* ch = str.c_str();
         //开始播放打开的文件
         _player->setFilename(filename.toUtf8().data());
         _player->play();
