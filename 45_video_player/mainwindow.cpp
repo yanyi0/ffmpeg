@@ -10,14 +10,14 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //设置音量滑块的范围
-    ui->volumnSlider->setRange(VideoPlayer::Volumn::Min,VideoPlayer::Volumn::Max);
-    ui->volumnSlider->setValue(ui->volumnSlider->maximum());
     //创建播放器
     _player = new VideoPlayer();
     connect(_player,&VideoPlayer::stateChanged,this,&MainWindow::onPlayerStateChanged);
     connect(_player,&VideoPlayer::initFinished,this,&MainWindow::onPlayerInitFinished);
     connect(_player,&VideoPlayer::playFailed,this,&MainWindow::onPlayerPlayFailed);
+    //设置音量滑块的范围
+    ui->volumnSlider->setRange(VideoPlayer::Volumn::Min,VideoPlayer::Volumn::Max);
+    ui->volumnSlider->setValue(ui->volumnSlider->maximum());
 }
 
 MainWindow::~MainWindow()
@@ -124,8 +124,6 @@ void MainWindow::on_volumnSlider_valueChanged(int value)
 {
     qDebug() << "on_volumnSlider_valueChanged" << value;
     ui->volumnLabel->setText(QString("%1").arg(value));
-    //有漏洞，_player还未初始化
-    if(_player)
     _player->setVolumn(value);
 }
 
