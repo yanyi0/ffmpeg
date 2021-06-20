@@ -56,7 +56,8 @@ LIBS += -L$${FFMPEG_HOME}/lib \
         -lavdevice \
         -lavformat \
         -lavcodec \
-        -lavutil
+        -lavutil \
+        -lswresample
 
 
 INCLUDEPATH += $${SDL_HOME}/include

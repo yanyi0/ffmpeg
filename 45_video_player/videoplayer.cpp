@@ -10,16 +10,9 @@ VideoPlayer::VideoPlayer(QObject *parent) : QObject(parent)
         emit playFailed(this);
         return;
     }
-    _aPktList = new std::list<AVPacket>();
-    _vPktList = new std::list<AVPacket>();
-    _aMutex = new CondMutex();
-    _vMutex = new CondMutex();
 }
 VideoPlayer::~VideoPlayer(){
-    delete _aPktList;
-    delete _vPktList;
-    delete _aMutex;
-    delete _vMutex;
+    free();
 
     SDL_Quit();
 }
@@ -30,9 +23,13 @@ VideoPlayer::State VideoPlayer::getState(){
 void VideoPlayer:: play(){
     if(_state == VideoPlayer::Playing) return;
     //状态可能是暂停，停止，播放完毕
-    std::thread([this](){
-        readFile();
-    }).detach();
+
+    if(_state == Stopped){
+        std::thread([this](){
+            readFile();
+        }).detach();
+    }
+
     //解封装，解码，播放，音视频同步
     //创建子线程去解码
     //解码后的格式不一定是我们播放器想要的
@@ -43,6 +40,7 @@ void VideoPlayer:: play(){
 }
 void VideoPlayer::pause(){
     if(_state != VideoPlayer::Playing) return;
+    //状态可能是:正在播放，暂停，正常完毕
     //改变状态
     setState(VideoPlayer::Paused);
 }
@@ -51,6 +49,8 @@ void VideoPlayer::stop(){
     if(_state == VideoPlayer::Stopped) return;
     //改变状态
     setState(VideoPlayer::Stopped);
+    //释放资源
+    free();
 }
 bool VideoPlayer::isPlaying(){
     return _state == VideoPlayer::Playing;
@@ -60,6 +60,18 @@ void VideoPlayer::setFilename(const char *filename){
 }
 int64_t VideoPlayer::getDuration(){
     return _fmtCtx ? _fmtCtx->duration:0;
+}
+void VideoPlayer::setVolumn(int volumn){
+    _volumn = volumn;
+}
+int VideoPlayer::getVolume(){
+    return _volumn;
+}
+void VideoPlayer::setMute(bool mute){
+    _mute = mute;
+}
+bool VideoPlayer::isMute(){
+    return _mute;
 }
 #pragma mark - 私有方法
 void VideoPlayer::readFile(){
@@ -75,18 +87,21 @@ void VideoPlayer::readFile(){
         //打印流信息到控制台
         av_dump_format(_fmtCtx,0,_filename,0);
         fflush(stderr);
-
         //初始化音频信息
-        if(initAudioInfo() < 0)
-            goto end;
-       //初始化视频信息
-        if(initVideoInfo() < 0)
-            goto end;
+        bool hasAudio = initAudioInfo() >= 0;
+        //初始化视频信息
+        bool hasVideo = initVideoInfo() >= 0;
+        if(!hasAudio && !hasVideo)
+        {
+            emit playFailed(this);
+            free();
+            return;
+        }
 
         //初始化完毕，发送信号
         emit initFinished(this);
 //        从输入文件中读取数据
-        while(true){
+        while(_state != Stopped){
             //确保每次读取到的pkt都是新的，若在while循环外面，则每次加入list中的pkt都将一模一样，为最后一次读取到的pkt
             AVPacket pkt;
             ret = av_read_frame(_fmtCtx,&pkt);
@@ -96,17 +111,15 @@ void VideoPlayer::readFile(){
                 }else if(pkt.stream_index == _vStream->index){//读取到的是视频数据
                     addVideoPkt(pkt);
                 }
+            }else if(ret == AVERROR_EOF){
+                qDebug() << "已经读取到文件尾部";
+                break;
             }else{
+                ERROR_BUF;
+                qDebug() << "av_read_frame error" << errbuf;
                 continue;
             }
         }
-
-    end:
-        ;
-        //后续统一进行释放
-//        avcodec_free_context(&_aDecodeCtx);
-//        avcodec_free_context(&_vDecodeCtx);
-//        avformat_close_input(&_fmtCtx);
 }
 //初始化解码器:根据传入的AVMediaType获取解码信息，要想外面获取到解码上下文，传入外边的解码上下文的地址，同理传入stream的地址,里面赋值后
 //外部能获取到，C语言中的指针改变传入的地址中的值
@@ -117,7 +130,7 @@ int VideoPlayer::initDecoder(AVCodecContext **decodeCtx,AVStream **stream,AVMedi
     RET(av_find_best_stream);
     //检验流
     int streamIdx = ret;
-    qDebug() << "文件的流的数量" << _fmtCtx->nb_streams;
+//    qDebug() << "文件的流的数量" << _fmtCtx->nb_streams;
     *stream = _fmtCtx->streams[streamIdx];
     if(!stream){
         qDebug() << "stream is empty";
@@ -155,4 +168,9 @@ void VideoPlayer::setState(State state){
     if(state == _state) return;
     _state = state;
     emit stateChanged(this);
+}
+void VideoPlayer::free(){
+    avformat_close_input(&_fmtCtx);
+    freeAudio();
+    freeVideo();
 }

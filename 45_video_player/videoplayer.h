@@ -14,6 +14,8 @@ extern "C" {
 //编码
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
+//重采样
+#include <libswresample/swresample.h>
 }
 #include <QDebug>
 #define ERROR_BUF \
@@ -25,7 +27,8 @@ extern "C" {
     qDebug() << #func << "error" << errbuf;\
     setState(Stopped);\
     emit playFailed(this);\
-    goto end;\
+    free();\
+    return;\
     }
 
 #define RET(func) \
@@ -47,6 +50,11 @@ public:
         Playing,
         Paused
     } State;
+    //音量
+    typedef enum {
+        Min = 0,
+        Max = 100
+    } Volumn;
     explicit VideoPlayer(QObject *parent = nullptr);
     ~VideoPlayer();
     /* 播放 */
@@ -63,22 +71,52 @@ public:
     void setFilename(const char *filename);
     /* 获取总时长(单位是微秒，1秒 = 10^3毫秒 = 10^6微妙) */
     int64_t getDuration();
+    /* 设置音量 */
+    void setVolumn(int volumn);
+    /* 获取当前音量 */
+    int getVolume();
+    /* 设置静音 */
+    void setMute(bool mute);
+    bool isMute();
 private:
     /************** 音频相关 **************/
+    typedef struct {
+        int sampleRate;
+        AVSampleFormat sampleFmt;
+        int chLayout;
+        int chs;
+        //每一个样本帧(两个声道(左右声道))的大小
+        int bytesPerSampleFrame;
+    } AudioSwrSpec;
+
     //解码上下文
     AVCodecContext *_aDecodeCtx = nullptr;
     //音频流
     AVStream *_aStream = nullptr;
-    //存放解码后的数据
-    AVFrame *_aFrame = nullptr;
-    //存放音频包的列表
-    std::list<AVPacket> *_aPktList = nullptr;
-    //音频包列表的锁
-    CondMutex *_aMutex = nullptr;
-    //初始化SDL
-    int initSDL();
+    //存放音频包的列表  ---- 跟随VideoPlayer生而生死而死，用对象不用指针
+    std::list<AVPacket> _aPktList;
+    //音频包列表的锁 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
+    CondMutex _aMutex;
+    //音频重采样上下文
+    SwrContext *_aSwrCtx = nullptr;
+    //音频重采样输入/输出参数
+    AudioSwrSpec _aSwrInSpec,_aSwrOutSpec;
+    //存放解码后的音频重采样输入/输出数据
+    AVFrame *_aSwrInFrame = nullptr,*_aSwrOutFrame = nullptr;
+    //从哪个位置开始取出PCM数据填充到SDL的音频缓冲区，应对复杂情况，PCM大于缓冲区，需要二次填充记录已经填充的PCM的索引位置
+    int _aSwrOutIdx = 0;
+    //音频重采样后输出的PCM数据大小
+    int _aSwrOutSize = 0;
+    //音量
+    int _volumn = Max;
+    //经营
+    bool _mute = false;
     //初始化音频信息
     int initAudioInfo();
+    //初始化SDL
+    int initSDL();
+    //初始化音频重采样
+    int initSwr();
     //添加数据包到音频列表中
     void addAudioPkt(AVPacket &pkt);
     //清空音频数据包列表
@@ -97,10 +135,10 @@ private:
     AVStream *_vStream = nullptr;
     //存放解码后的数据
     AVFrame *_vframe = nullptr;
-    //存放视频包的列表
-    std::list<AVPacket> *_vPktList = nullptr;
-    //视频包列表的锁
-    CondMutex *_vMutex = nullptr;
+    //存放视频包的列表 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
+    std::list<AVPacket> _vPktList;
+    //视频包列表的锁 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
+    CondMutex _vMutex;
     //初始化视频信息
     int initVideoInfo();
     //添加数据包到视频列表中
@@ -122,6 +160,10 @@ private:
     const char *_filename;
     /* 读取文件 */
     void readFile();
+    //释放资源
+    void free();
+    void freeAudio();
+    void freeVideo();
 signals:
    void stateChanged(VideoPlayer *player);
    void initFinished(VideoPlayer *player);

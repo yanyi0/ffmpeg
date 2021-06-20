@@ -10,6 +10,9 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //设置音量滑块的范围
+    ui->volumnSlider->setRange(VideoPlayer::Volumn::Min,VideoPlayer::Volumn::Max);
+    ui->volumnSlider->setValue(ui->volumnSlider->maximum());
     //创建播放器
     _player = new VideoPlayer();
     connect(_player,&VideoPlayer::stateChanged,this,&MainWindow::onPlayerStateChanged);
@@ -44,7 +47,7 @@ void MainWindow::onPlayerStateChanged(VideoPlayer *player){
        ui->stopBtn->setEnabled(false);
        ui->currentSlider->setEnabled(false);
        ui->volumnSlider->setEnabled(false);
-       ui->silenceBtn->setEnabled(false);
+       ui->muteBtn->setEnabled(false);
 
        ui->currentLabel->setText(getTimeText(0));
        ui->currentSlider->setValue(0);
@@ -55,7 +58,7 @@ void MainWindow::onPlayerStateChanged(VideoPlayer *player){
         ui->stopBtn->setEnabled(true);
         ui->currentSlider->setEnabled(true);
         ui->volumnSlider->setEnabled(true);
-        ui->silenceBtn->setEnabled(true);
+        ui->muteBtn->setEnabled(true);
 
         //显示播放的页面
         ui->playWidget->setCurrentWidget(ui->videoPage);
@@ -80,8 +83,7 @@ void MainWindow::on_openFileBtn_clicked()
                     this, "选择要播放的文件",
                     "/Users/cloud/Documents/iOS/音视频/TestMusic/素材/",
                     "所有文件 (*.*);;"
-                    "音频文件 (*.mp3 *.aac *.wav *.flac);;"
-                    "视频文件 (*.mp4 *.avi *.mkv *.rmvb *.mov)");
+                    "多媒体文件 (*.mp3 *.aac *.wav *.flac *.mp4 *.avi *.mkv *.rmvb *.mov)");
         qDebug() << "打开文件path=" << filename;
         if(filename.isEmpty()) return;
 //        qDebug() << "------文件名-------" << filename.toUtf8().data();
@@ -122,6 +124,9 @@ void MainWindow::on_volumnSlider_valueChanged(int value)
 {
     qDebug() << "on_volumnSlider_valueChanged" << value;
     ui->volumnLabel->setText(QString("%1").arg(value));
+    //有漏洞，_player还未初始化
+    if(_player)
+    _player->setVolumn(value);
 }
 
 void MainWindow::on_playBtn_clicked()
@@ -152,4 +157,16 @@ QString MainWindow::getTimeText(int value){
             .arg(seconds/3600,2,10,fillChar)
             .arg(seconds%3600/60,2,10,fillChar)
             .arg(seconds%60,2,10,fillChar);
+}
+
+void MainWindow::on_muteBtn_clicked()
+{
+    if(_player->isMute()){
+        _player->setMute(false);
+        ui->muteBtn->setText("静音");
+    }else{
+        _player->setMute(true);
+        ui->muteBtn->setText("开音");
+    }
+    ui->muteBtn->repaint();
 }

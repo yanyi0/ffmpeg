@@ -23,16 +23,66 @@ int VideoPlayer::initAudioInfo(){
     int ret = initDecoder(&_aDecodeCtx,&_aStream,AVMEDIA_TYPE_AUDIO);
     RET(initDecoder);
 
-    //初始化_aFrame
-    _aFrame = av_frame_alloc();
-    if(!_aFrame){
+    //初始化音频重采样
+    ret = initSwr();
+    RET(initSwr);
+    //初始化SDL
+    ret = initSDL();
+    RET(initSDL);
+
+    return 0;
+}
+int VideoPlayer::initSwr(){
+    //重采样输入参数
+    _aSwrInSpec.sampleRate = _aDecodeCtx->sample_rate;
+    _aSwrInSpec.sampleFmt = _aDecodeCtx->sample_fmt;
+    _aSwrInSpec.chLayout = _aDecodeCtx->channel_layout;
+    _aSwrInSpec.chs = _aDecodeCtx->channels;
+
+    //重采样输出参数
+    _aSwrOutSpec.sampleRate = 44100;
+    _aSwrOutSpec.sampleFmt = AV_SAMPLE_FMT_S16;
+    _aSwrOutSpec.chLayout = AV_CH_LAYOUT_STEREO;
+    _aSwrOutSpec.chs = av_get_channel_layout_nb_channels(_aSwrOutSpec.chLayout);
+    _aSwrOutSpec.bytesPerSampleFrame = _aSwrOutSpec.chs * av_get_bytes_per_sample(_aSwrOutSpec.sampleFmt);
+    //创建重采样上下文
+    _aSwrCtx = swr_alloc_set_opts(nullptr,
+                                  // 输出参数
+                                  _aSwrOutSpec.chLayout,
+                                  _aSwrOutSpec.sampleFmt,
+                                  _aSwrOutSpec.sampleRate,
+                                  // 输入参数
+                                  _aSwrInSpec.chLayout,
+                                  _aSwrInSpec.sampleFmt,
+                                  _aSwrInSpec.sampleRate,
+                                  0, nullptr);
+    if (!_aSwrCtx) {
+        qDebug() << "swr_alloc_set_opts error";
+        return -1;
+    }
+    //初始化重采样上下文
+    int ret = swr_init(_aSwrCtx);
+    RET(swr_init);
+
+    //初始化输入Frame
+    _aSwrInFrame = av_frame_alloc();
+    if(!_aSwrInFrame){
         qDebug() << "av_frame_alloc error";
         return -1;
     }
 
-    //初始化SDL
-    ret = initSDL();
-    RET(initSDL);
+    //初始化输出Frame
+    _aSwrOutFrame = av_frame_alloc();
+    if(!_aSwrOutFrame){
+        qDebug() << "av_frame_alloc error";
+        return -1;
+    }
+    qDebug() << "_aSwrOutFrame初始化之前" << _aSwrOutFrame->data[0];
+    //初始化重采样的输出_aSwrOutFrame的data[0]空间，防止重采样的时候，出现采样后的数据不知道放哪儿，
+    //初始化前为空指针，提前分配一个足够大的内存空间4096个样本，一般的样本大小为1024
+    ret = av_samples_alloc(_aSwrOutFrame->data,_aSwrOutFrame->linesize,_aSwrOutSpec.chs,4096,_aSwrOutSpec.sampleFmt,1);
+    qDebug() << "_aSwrOutFrame初始化之后" << _aSwrOutFrame->data[0];
+    RET(av_samples_alloc);
 
     return 0;
 }
@@ -61,72 +111,116 @@ int VideoPlayer::initSDL(){
     return 0;
 }
 void VideoPlayer::sdlAudioCallbackFunc(void *userdata, Uint8 *stream, int len){
+    //回调函数在SDL开辟的子线程执行
     VideoPlayer *player = (VideoPlayer *)userdata;
     player->sdlAudioCallback(stream,len);
 }
 void VideoPlayer::addAudioPkt(AVPacket &pkt){
-    _aMutex->lock();
-    _aPktList->push_back(pkt);
-    _aMutex->signal();
-    _aMutex->unlock();
+    _aMutex.lock();
+    _aPktList.push_back(pkt);
+    _aMutex.signal();
+    _aMutex.unlock();
 }
 void VideoPlayer::clearAudioPktList(){
-    _aMutex->lock();
+    _aMutex.lock();
     //取出list，前面加*
-    for(AVPacket &pkt:*_aPktList){
+    for(AVPacket &pkt:_aPktList){
         av_packet_unref(&pkt);
     }
-    _aPktList->clear();
-    _aMutex->unlock();
+    _aPktList.clear();
+    _aMutex.unlock();
+}
+void VideoPlayer::freeAudio(){
+    _aSwrOutIdx = 0;
+    _aSwrOutSize = 0;
+
+    clearAudioPktList();
+    avcodec_free_context(&_aDecodeCtx);
+    av_frame_free(&_aSwrInFrame);
+    swr_free(&_aSwrCtx);
+    if(_aSwrOutFrame){
+        av_freep(&_aSwrOutFrame->data[0]);
+        av_frame_free(&_aSwrOutFrame);
+    }
+    //停止播放
+    SDL_PauseAudio(1);
+    SDL_CloseAudio();
 }
 void VideoPlayer::sdlAudioCallback(Uint8 *stream, int len){
-//    QString LogInfo;
-//    LogInfo.sprintf("%p", QThread::currentThread());
-//    qDebug() << "-----sdlAudioCallback---------OpenSerialPort " <<"threadID : "<<LogInfo;
-   //len音频缓冲区剩余的大小(音频缓冲区剩余要填充的大小)
+   //清零(静音)
+    SDL_memset(stream,0,len);
+   //len:SDL音频缓冲区剩余的大小(音频缓冲区还未填充的大小)
     while (len > 0) {
-        int dataSize = decodeAudio();
-        qDebug() << "解码一次的数据大小" << dataSize;
-        if(dataSize <= 0){
-
-        }else{
-
+        if(_state == Stopped) break;
+        //说明当前PCM的数据已经全部拷贝到SDL的音频缓冲区了
+        //需要解码下一个pkt，获取新的PCM数据
+        if(_aSwrOutIdx >= _aSwrOutSize){
+            //全新PCM的数据大小
+            _aSwrOutSize = decodeAudio();
+            //索引清0
+            _aSwrOutIdx = 0;
+//            qDebug() << "解码一次的数据大小" << _aSwrOutSize;
+            //没有解码出PCM数据那就静音处理
+            if(_aSwrOutSize <= 0){
+               //出错了，或者还没有解码出PCM数据，假定1024个字节静音处理
+                //假定1024个字节
+                _aSwrOutSize = 1024;
+                //给PCM填充0(静音)
+                memset(_aSwrOutFrame->data[0],0,_aSwrOutSize);
+            }
         }
+        //本次需要填充到stream中的PCM数据大小
+        int fillLen = _aSwrOutSize - _aSwrOutIdx;
+        fillLen = std::min(fillLen,len);
+        //获取音量
+        int volumn = _mute ? 0:(_volumn * 1.0/Max) * SDL_MIX_MAXVOLUME;
         //将一个pkt包解码后的pcm数据填充到SDL的音频缓冲区
-//        SDL_MixAudio(stream,src,srcLen,SDL_MIX_MAXVOLUME);
-//        //移动偏移量
-//        len -= srcLen;
-//        stream -= srcLen;
+        SDL_MixAudio(stream,_aSwrOutFrame->data[0]+_aSwrOutIdx,fillLen,volumn);
+        //移动偏移量
+        len -= fillLen;
+        stream += fillLen;
+        _aSwrOutIdx += fillLen;
     }
 }
 int VideoPlayer::decodeAudio(){
 //    qDebug() << "decodeAudio线程" << QThread::currentThreadId() << "QT";
-    _aMutex->lock();
+    _aMutex.lock();
     //_aPktList中如果是空的，就进入等待，等待_aPktList中新加入解封装后的pkt发送信号signal通知到这儿，
     //有可能解封装很快就都解完成了，后面都没有新的pkt，也不会发送信号了,就会一直在这儿等
 //    while(_aPktList->empty()){
 //        _aMutex->wait();
 //    }
-    if(_aPktList->empty()){
-        _aMutex->unlock();
+    if(_aPktList.empty() || _state == Stopped){
+        _aMutex.unlock();
         return 0;
     }
     //取出list中的头部pkt
-    AVPacket pkt = _aPktList->front();
-    //删除头部pkt
-    _aPktList->pop_front();
-    _aMutex->unlock();
+    AVPacket &pkt = _aPktList.front();
     // 发送压缩数据到解码器
     int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
     //释放pkt
     av_packet_unref(&pkt);
+//    qDebug() << "释放pkt后pkt地址" << &pkt;
+    //删除头部pkt,写成引用类型，不能立刻就从list中pop_front删掉这个pkt对象的内存，后面还会用到，用完之后才能删
+    _aPktList.pop_front();
+//    qDebug() << "pkt从链表中移除后" << &pkt;
+    _aMutex.unlock();
     RET(avcodec_send_packet);
     // 获取解码后的数据
-    ret = avcodec_receive_frame(_aDecodeCtx, _aFrame);
+    ret = avcodec_receive_frame(_aDecodeCtx, _aSwrInFrame);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         return 0;
     } else RET(avcodec_receive_frame);
-    qDebug() << _aFrame->sample_rate << _aFrame->channels << av_get_sample_fmt_name((AVSampleFormat)_aFrame->format);
+    //查看输入文件格式
+//    qDebug() << _aSwrInFrame->sample_rate << _aSwrInFrame->channels << av_get_sample_fmt_name((AVSampleFormat)_aSwrInFrame->format);
+
     //由于解码出来的pcm和SDL要求的pcm格式可能不一致，需要进行音频重采样
-    return _aFrame->sample_rate * _aFrame->channels * av_get_bytes_per_sample((AVSampleFormat)_aFrame->format);
+    //重采样输出的样本数 向上取整  48000 1024 44100  outSamples
+    int outSamples = av_rescale_rnd(_aSwrOutSpec.sampleRate, _aSwrInFrame->nb_samples, _aSwrInSpec.sampleRate, AV_ROUND_UP);
+
+    // 重采样(返回值转换后的样本数量)_aSwrOutFrame->data必须初始化，否则重采样转化的pcm样本不知道放在那儿
+    ret = swr_convert(_aSwrCtx,_aSwrOutFrame->data, outSamples,(const uint8_t **) _aSwrInFrame->data, _aSwrInFrame->nb_samples);
+    RET(swr_convert);
+    //ret为每一个声道的样本数 * 声道数 * 每一个样本的大小 = 重采样后的pcm的大小
+    return  ret * _aSwrOutSpec.bytesPerSampleFrame;
 }
