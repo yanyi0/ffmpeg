@@ -55,8 +55,10 @@ void VideoPlayer::stop(){
 bool VideoPlayer::isPlaying(){
     return _state == VideoPlayer::Playing;
 }
-void VideoPlayer::setFilename(const char *filename){
-    _filename = filename;
+//转成C语言字符串防止出现乱码666-> 666\0 后面要加1,写引用防止拷贝构造函数
+void VideoPlayer::setFilename(QString &filename){
+    char *file = filename.toUtf8().data();
+    memcpy(_filename,file,strlen(file) + 1);
 }
 int64_t VideoPlayer::getDuration(){
     return _fmtCtx ? _fmtCtx->duration:0;

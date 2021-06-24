@@ -40,7 +40,7 @@ int VideoPlayer::initSwr(){
     _aSwrInSpec.chs = _aDecodeCtx->channels;
 
     //重采样输出参数
-    _aSwrOutSpec.sampleRate = 44100;
+    _aSwrOutSpec.sampleRate = SAMPLE_RATE;
     _aSwrOutSpec.sampleFmt = AV_SAMPLE_FMT_S16;
     _aSwrOutSpec.chLayout = AV_CH_LAYOUT_STEREO;
     _aSwrOutSpec.chs = av_get_channel_layout_nb_channels(_aSwrOutSpec.chLayout);
@@ -90,16 +90,16 @@ int VideoPlayer::initSDL(){
     // 音频参数
     SDL_AudioSpec spec;
     // 采样率
-    spec.freq = SAMPLE_RATE;
+    spec.freq = _aSwrOutSpec.sampleRate;
     // 采样格式（s16le）
     spec.format = SAMPLE_FORMAT;
     // 声道数
-    spec.channels = CHANNELS;
+    spec.channels = _aSwrOutSpec.chs;
     // 音频缓冲区的样本数量（这个值必须是2的幂）
     spec.samples = SAMPLES;
     // 回调
     spec.callback = sdlAudioCallbackFunc;
-    // 传递给回调的参数
+    // 传递给回调的参数,传递this到类方法中
     spec.userdata = this;
     // 打开音频设备
     if (SDL_OpenAudio(&spec, nullptr)) {
@@ -115,6 +115,10 @@ void VideoPlayer::sdlAudioCallbackFunc(void *userdata, Uint8 *stream, int len){
     VideoPlayer *player = (VideoPlayer *)userdata;
     player->sdlAudioCallback(stream,len);
 }
+/*
+ * 上面的pkt虽然只在栈里面创建了一个，但是下面pkt添加到list的时候调用了pkt拷贝构造函数，里面添加的是一个一模一样的全新的pkt
+ * AVPacket pkt = _aPktList.front()取出的时候也调用了拷贝构造函数，拷贝了一个一模一样的pkt对象，所以_aPktList.pop_front()执行后删除pkt后并不会影响这个全新的pkt
+*/
 void VideoPlayer::addAudioPkt(AVPacket &pkt){
     _aMutex.lock();
     _aPktList.push_back(pkt);

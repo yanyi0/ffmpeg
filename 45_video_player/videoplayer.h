@@ -68,7 +68,7 @@ public:
     /* 获取当前状态 */
     State getState();
     /* 设置文件名 */
-    void setFilename(const char *filename);
+    void setFilename(QString &filename);
     /* 获取总时长(单位是微秒，1秒 = 10^3毫秒 = 10^6微妙) */
     int64_t getDuration();
     /* 设置音量 */
@@ -157,7 +157,7 @@ private:
     //改变状态
     void setState(State state);
     /* 文件名 */
-    const char *_filename;
+    char _filename[512];
     /* 读取文件 */
     void readFile();
     //释放资源

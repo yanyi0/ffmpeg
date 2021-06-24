@@ -91,7 +91,7 @@ void MainWindow::on_openFileBtn_clicked()
 //        std::string str = filename.toStdString();
 //        const char* ch = str.c_str();
         //开始播放打开的文件
-        _player->setFilename(filename.toUtf8().data());
+        _player->setFilename(filename);
         _player->play();
         //选取多个文件
 //        QStringList ss = QFileDialog::getOpenFileNames(
