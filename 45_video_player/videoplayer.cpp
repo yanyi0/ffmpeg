@@ -95,8 +95,7 @@ void VideoPlayer::readFile(){
         bool hasVideo = initVideoInfo() >= 0;
         if(!hasAudio && !hasVideo)
         {
-            emit playFailed(this);
-            free();
+            fataError();
             return;
         }
 
@@ -175,4 +174,9 @@ void VideoPlayer::free(){
     avformat_close_input(&_fmtCtx);
     freeAudio();
     freeVideo();
+}
+void VideoPlayer::fataError(){
+    setState(Stopped);
+    emit playFailed(this);
+    free();
 }

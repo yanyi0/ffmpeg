@@ -16,27 +16,26 @@ extern "C" {
 #include <libavutil/imgutils.h>
 //重采样
 #include <libswresample/swresample.h>
+//像素格式转换
+#include <libswscale/swscale.h>
 }
 #include <QDebug>
 #define ERROR_BUF \
     char errbuf[1024];\
     av_strerror(ret,errbuf,sizeof(errbuf));
-#define END(func) \
+
+#define CODE(func,code) \
     if(ret < 0) { \
     ERROR_BUF;\
     qDebug() << #func << "error" << errbuf;\
-    setState(Stopped);\
-    emit playFailed(this);\
-    free();\
-    return;\
+    code;\
     }
 
-#define RET(func) \
-    if(ret < 0) { \
-    ERROR_BUF;\
-    qDebug() << #func << "error" << errbuf;\
-    return ret;\
-    }
+#define END(func) CODE(func,fataError();return;)
+
+#define RET(func) CODE(func,return ret;)
+
+#define CONTINUE(func) CODE(func,continue;)
 /*
  * 预处理视频，不负责显示、渲染视频
  */
@@ -133,18 +132,24 @@ private:
     AVCodecContext *_vDecodeCtx = nullptr;
     //视频流
     AVStream *_vStream = nullptr;
-    //存放解码后的数据
-    AVFrame *_vframe = nullptr;
+    //存放解码后的视频像素格式输入/输出数据
+    AVFrame *_vSwsInFrame = nullptr,*_vSwsOutFrame = nullptr;
+    //像素格式转换上下文
+    SwsContext *_vSwsCtx = nullptr;
     //存放视频包的列表 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
     std::list<AVPacket> _vPktList;
     //视频包列表的锁 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
     CondMutex _vMutex;
     //初始化视频信息
     int initVideoInfo();
+    //初始化视频像素格式转换
+    int initSws();
     //添加数据包到视频列表中
     void addVideoPkt(AVPacket &pkt);
     //清空视频数据包列表
     void clearVideoPktList();
+    //解码视频
+    void decodeVideo();
 
     /***** 其他 *****/
     //解封装上下文
@@ -164,6 +169,7 @@ private:
     void free();
     void freeAudio();
     void freeVideo();
+    void fataError();
 signals:
    void stateChanged(VideoPlayer *player);
    void initFinished(VideoPlayer *player);
