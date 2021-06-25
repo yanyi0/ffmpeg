@@ -36,6 +36,8 @@ extern "C" {
 #define RET(func) CODE(func,return ret;)
 
 #define CONTINUE(func) CODE(func,continue;)
+
+#define BREAK(func) CODE(func,break;)
 /*
  * 预处理视频，不负责显示、渲染视频
  */
@@ -54,6 +56,14 @@ public:
         Min = 0,
         Max = 100
     } Volumn;
+
+    //视频frame参数
+    typedef struct {
+        int width;
+        int height;
+        AVPixelFormat pixFmt;
+    } VideoSwsSpec;
+
     explicit VideoPlayer(QObject *parent = nullptr);
     ~VideoPlayer();
     /* 播放 */
@@ -136,6 +146,8 @@ private:
     AVFrame *_vSwsInFrame = nullptr,*_vSwsOutFrame = nullptr;
     //像素格式转换上下文
     SwsContext *_vSwsCtx = nullptr;
+    //输出frame参数
+    VideoSwsSpec _vSwsOutSpec;
     //存放视频包的列表 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
     std::list<AVPacket> _vPktList;
     //视频包列表的锁 ---- 跟随VideoPlayer生而生死而死，用对象不用指针
@@ -174,6 +186,7 @@ signals:
    void stateChanged(VideoPlayer *player);
    void initFinished(VideoPlayer *player);
    void playFailed(VideoPlayer *player);
+   void frameDecoded(VideoPlayer *player,uint8_t *data,VideoSwsSpec &spec);
 };
 
 #endif // VIDEOPLAYER_H
