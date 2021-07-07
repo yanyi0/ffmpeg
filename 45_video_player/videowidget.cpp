@@ -78,6 +78,9 @@ void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPl
 }
 void VideoWidget::freeImage(){
     if(_image){
+        av_free(_image->bits());
+        //C++中，new出来的是数据，释放时写成delete[]形式
+//       delete[] _image->bits();
        delete  _image;
        _image = nullptr;
     }

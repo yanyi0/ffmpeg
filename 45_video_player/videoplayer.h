@@ -62,6 +62,7 @@ public:
         int width;
         int height;
         AVPixelFormat pixFmt;
+        int size;
     } VideoSwsSpec;
 
     explicit VideoPlayer(QObject *parent = nullptr);

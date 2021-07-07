@@ -26,6 +26,7 @@ int VideoPlayer::initSws(){
     _vSwsOutSpec.width = inW >> 4 << 4;
     _vSwsOutSpec.height = inH >> 4 << 4;
     _vSwsOutSpec.pixFmt = AV_PIX_FMT_RGB24;
+    _vSwsOutSpec.size = av_image_get_buffer_size(_vSwsOutSpec.pixFmt,_vSwsOutSpec.width,_vSwsOutSpec.height,1);
 
     //初始化像素格式转换上下文
     _vSwsCtx = sws_getContext(inW,
@@ -147,8 +148,13 @@ void VideoPlayer::decodeVideo(){
             }
 
 //            qDebug() << _vSwsOutFrame->data[0];
+            //子线程把这一块数据_vSwsOutFrame->data[0]直接发送到主线程，给widget里面的image里面的bits指针指向去绘制图片，主线程也会访问这一块内存数据，子线程也会访问，有可能子线程正往里面写着，主线程就拿去用了，会导致数据错乱，崩溃
+            //将像素转换后的图片数据拷贝一份出来
+            uint8_t *data = (uint8_t *)av_malloc(_vSwsOutSpec.size);
+//            uint8_t *data = new uint8_t[_vSwsOutSpec.size];
+            memcpy(data,_vSwsOutFrame->data[0],_vSwsOutSpec.size);
             //发出信号
-            emit frameDecoded(this,_vSwsOutFrame->data[0],_vSwsOutSpec);
+            emit frameDecoded(this,data,_vSwsOutSpec);
         }
     }
 }
