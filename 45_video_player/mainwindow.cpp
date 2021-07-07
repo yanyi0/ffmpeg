@@ -44,7 +44,7 @@ void MainWindow::onPlayerInitFinished(VideoPlayer *player){
 
 void MainWindow::onPlayerTimeChanged(VideoPlayer *player){
     //音频播放时间设置滚动条和label
-    ui->currentSlider->setValue(player->getCurrent());
+    ui->currentSlider->setValue(player->getTime());
 }
 
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){

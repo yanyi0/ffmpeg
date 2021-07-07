@@ -35,6 +35,10 @@ int VideoPlayer::initSws(){
                               _vSwsOutSpec.height,
                               _vSwsOutSpec.pixFmt,
                               SWS_BILINEAR,nullptr,nullptr,nullptr);
+    if(!_vSwsCtx){
+        qDebug() << "sws_getContext error";
+        return -1;
+    }
 
     //初始化输入Frame
     _vSwsInFrame = av_frame_alloc();
@@ -76,7 +80,7 @@ void VideoPlayer::clearVideoPktList(){
     _vMutex.unlock();
 }
 void VideoPlayer::freeVideo(){
-    _vClock = 0;
+    _vTime = 0;
     clearVideoPktList();
     avcodec_free_context(&_vDecodeCtx);
     av_frame_free(&_vSwsInFrame);
@@ -110,7 +114,7 @@ void VideoPlayer::decodeVideo(){
 
         //视频时钟 视频用dts，音频用pts
         if(pkt.dts != AV_NOPTS_VALUE){
-            _vClock = av_q2d(_vStream->time_base) * pkt.dts;
+            _vTime = av_q2d(_vStream->time_base) * pkt.dts;
 //            qDebug() << _vClock;
         }
 
@@ -131,7 +135,7 @@ void VideoPlayer::decodeVideo(){
             if(_aStream != nullptr){//有音频
                 //如果视频包多早解码出来，就要等待对应的音频时钟到达
                 //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
-                while(_vClock > _aClock && _state == Playing){
+                while(_vTime > _aTime && _state == Playing){
                     SDL_Delay(5);
                 }
             }else{

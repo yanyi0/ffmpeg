@@ -81,7 +81,7 @@ public:
     /* 获取总时长(单位是秒，1秒 = 10^3毫秒 = 10^6微妙) */
     int getDuration();
     //当前播放时刻 秒
-    int getCurrent();
+    int getTime();
     /* 设置音量 */
     void setVolumn(int volumn);
     /* 获取当前音量 */
@@ -119,7 +119,7 @@ private:
     //音频重采样后输出的PCM数据大小
     int _aSwrOutSize = 0;
     //音频时钟
-    double _aClock = 0;
+    double _aTime = 0;
 
     //初始化音频信息
     int initAudioInfo();
@@ -164,7 +164,7 @@ private:
     //解码视频
     void decodeVideo();
     //视频时钟
-    double _vClock = 0;
+    double _vTime = 0;
 
     /***** 其他 *****/
     //解封装上下文

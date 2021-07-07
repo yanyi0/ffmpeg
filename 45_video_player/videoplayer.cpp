@@ -79,8 +79,8 @@ int VideoPlayer::getDuration(){
     return _fmtCtx ? round(_fmtCtx->duration/1000000.0):0;
 }
 //总时长四舍五入
-int VideoPlayer::getCurrent(){
-    return round(_aClock);
+int VideoPlayer::getTime(){
+    return round(_aTime);
 }
 
 void VideoPlayer::setVolumn(int volumn){
@@ -167,7 +167,7 @@ int VideoPlayer::initDecoder(AVCodecContext **decodeCtx,AVStream **stream,AVMedi
     int streamIdx = ret;
 //    qDebug() << "文件的流的数量" << _fmtCtx->nb_streams;
     *stream = _fmtCtx->streams[streamIdx];
-    if(!stream){
+    if(!*stream){
         qDebug() << "stream is empty";
         return -1;
     }
@@ -210,7 +210,10 @@ void VideoPlayer::free(){
     freeVideo();
 }
 void VideoPlayer::fataError(){
-    setState(Stopped);
+    //为了配置stop调用成功
+    _state = Playing;
+    stop();
+//    setState(Stopped);
     emit playFailed(this);
-    free();
+//    free();
 }
