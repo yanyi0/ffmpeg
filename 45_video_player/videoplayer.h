@@ -120,6 +120,8 @@ private:
     int _aSwrOutSize = 0;
     //音频时钟
     double _aTime = 0;
+    //音频资源是否可以释放
+    bool _aCanFree = false;
 
     //初始化音频信息
     int initAudioInfo();
@@ -165,16 +167,19 @@ private:
     void decodeVideo();
     //视频时钟
     double _vTime = 0;
+    //视频资源是否可以释放
+    bool _vCanFree = false;
 
     /***** 其他 *****/
     //解封装上下文
     AVFormatContext *_fmtCtx = nullptr;
     int initDecoder(AVCodecContext **decodeCtx,AVStream **stream,AVMediaType type);
+    //fmtCtx是否可以释放
+    bool _fmtCtxCanFree = false;
     //音量
     int _volumn = Max;
     //静音
     bool _mute = false;
-
 
     //保留播放器当前状态
     State _state = Stopped;

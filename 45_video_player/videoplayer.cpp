@@ -131,7 +131,7 @@ void VideoPlayer::readFile(){
         while(_state != Stopped){
             //不要讲文件中的压缩数据一次性读取到内存中，控制下大小
             if(_vPktList.size() >= VIDEO_MAX_PKT_SIZE || _aPktList.size() >= AUDIO_MAX_PKT_SIZE){
-                SDL_Delay(10);
+//                SDL_Delay(10);
                 continue;
             }
 //            qDebug() << _vPktList.size() << _aPktList.size();
@@ -155,6 +155,8 @@ void VideoPlayer::readFile(){
                 continue;
             }
         }
+        //标记一下:_fmtCtx可以释放了
+        _fmtCtxCanFree = true;
 }
 //初始化解码器:根据传入的AVMediaType获取解码信息，要想外面获取到解码上下文，传入外边的解码上下文的地址，同理传入stream的地址,里面赋值后
 //外部能获取到，C语言中的指针改变传入的地址中的值
@@ -205,7 +207,12 @@ void VideoPlayer::setState(State state){
     emit stateChanged(this);
 }
 void VideoPlayer::free(){
+    while (_aStream && !_aCanFree);
+    while (_vStream && !_vCanFree);
+    while (!_fmtCtxCanFree);
+
     avformat_close_input(&_fmtCtx);
+    _fmtCtxCanFree = false;
     freeAudio();
     freeVideo();
 }
