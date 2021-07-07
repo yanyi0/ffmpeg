@@ -25,9 +25,11 @@ void VideoWidget::onPlayerStateChanged(VideoPlayer *player){
      if(player->getState() != VideoPlayer::Stopped) return;
      qDebug() << "----------VideoWidget::onPlayerStateChanged------------";
      freeImage();
+     //黑屏 图片释放掉之后变黑屏
+     update();
 }
 void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPlayer::VideoSwsSpec &spec){
-    //qDebug() << "----------已经解码好了图片-------------";
+//    qDebug() << "----------已经解码好了图片-------------";
     //释放之前的图片
     freeImage();
     //创建新的图片

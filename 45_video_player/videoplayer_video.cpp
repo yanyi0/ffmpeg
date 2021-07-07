@@ -13,7 +13,7 @@ int VideoPlayer::initVideoInfo(){
 
     //开启新的线程去解码视频数据
     std::thread([this](){
-        qDebug() << "------------------开启新的线程解码数据--------------";
+//        qDebug() << "------------------开启新的线程解码数据--------------";
         decodeVideo();
     }).detach();
     return 0;
@@ -85,12 +85,15 @@ void VideoPlayer::freeVideo(){
     }
     sws_freeContext(_vSwsCtx);
     _vSwsCtx = nullptr;
+    _vStream = nullptr;
 }
 void VideoPlayer::decodeVideo(){
+//    qDebug() << "当前的播放器状态--------" << this->getState();
     while (true) {
+//        qDebug() << "decodeVideo";
         //如果是停止状态，会调用free，就不用再去解码，重采样，渲染，导致访问释放了的内存空间，会闪退
         if(_state == Stopped) break;
-        //qDebug() << "------------正式开始解码数据了-----------";
+//        qDebug() << "------------正式开始解码视频数据了-----------";
         _vMutex.lock();
         if(_vPktList.empty()){
             _vMutex.unlock();

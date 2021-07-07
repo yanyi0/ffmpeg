@@ -28,16 +28,18 @@ void VideoPlayer:: play(){
         std::thread([this](){
             readFile();
         }).detach();
-    }else{
-        //改变状态
-        setState(VideoPlayer::Playing);
     }
+//    else{
+//        //改变状态
+//        setState(VideoPlayer::Playing);
+//    }
     //解封装，解码，播放，音视频同步
     //创建子线程去解码
     //解码后的格式不一定是我们播放器想要的
     //PCM格式不是SDL支持的 S16 44100
     //YUV RGB
-
+    //改变状态
+    setState(VideoPlayer::Playing);
 }
 void VideoPlayer::pause(){
     if(_state != VideoPlayer::Playing) return;
@@ -109,9 +111,9 @@ void VideoPlayer::readFile(){
 
         //初始化完毕，发送信号
         emit initFinished(this);
-
-        //改变状态
-        setState(VideoPlayer::Playing);
+//        qDebug() << "--------改变状态-------";
+        //改变状态 要在读取线程的前面，否则导致解码循环提前退出，解码循环读取到时Stop状态直接break，再也不进入 无法解码 一直黑屏
+//        setState(VideoPlayer::Playing);
 
 //        从输入文件中读取数据
         while(_state != Stopped){
@@ -120,8 +122,10 @@ void VideoPlayer::readFile(){
             ret = av_read_frame(_fmtCtx,&pkt);
             if(ret == 0){
                 if(pkt.stream_index == _aStream->index){//读取到的是音频数据
+//                    qDebug() << "--------读取音频-------";
                     addAudioPkt(pkt);
                 }else if(pkt.stream_index == _vStream->index){//读取到的是视频数据
+//                    qDebug() << "--------读取视频-------";
                     addVideoPkt(pkt);
                 }
             }else if(ret == AVERROR_EOF){

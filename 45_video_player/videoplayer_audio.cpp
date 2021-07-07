@@ -137,6 +137,7 @@ void VideoPlayer::clearAudioPktList(){
 void VideoPlayer::freeAudio(){
     _aSwrOutIdx = 0;
     _aSwrOutSize = 0;
+    _aStream = nullptr;
 
     clearAudioPktList();
     avcodec_free_context(&_aDecodeCtx);
