@@ -41,6 +41,7 @@ void MainWindow::onPlayerInitFinished(VideoPlayer *player){
 }
 
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){
+//    qDebug() << "-----------MainWindow::onPlayerStateChanged-----------";
     VideoPlayer::State state = player->getState();
     if(state == VideoPlayer::Playing){
         ui->playBtn->setText("暂停");
@@ -66,6 +67,7 @@ void MainWindow::onPlayerStateChanged(VideoPlayer *player){
         ui->volumnSlider->setEnabled(true);
         ui->muteBtn->setEnabled(true);
 
+//        qDebug() << "------什么情况导致黑屏--------";
         //显示播放的页面
         ui->playWidget->setCurrentWidget(ui->videoPage);
     }

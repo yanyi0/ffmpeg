@@ -28,15 +28,16 @@ void VideoPlayer:: play(){
         std::thread([this](){
             readFile();
         }).detach();
+    }else{
+        //改变状态
+        setState(VideoPlayer::Playing);
     }
-
     //解封装，解码，播放，音视频同步
     //创建子线程去解码
     //解码后的格式不一定是我们播放器想要的
     //PCM格式不是SDL支持的 S16 44100
     //YUV RGB
-    //改变状态
-    setState(VideoPlayer::Playing);
+
 }
 void VideoPlayer::pause(){
     if(_state != VideoPlayer::Playing) return;
@@ -49,8 +50,13 @@ void VideoPlayer::stop(){
     if(_state == VideoPlayer::Stopped) return;
     //改变状态
     setState(VideoPlayer::Stopped);
+
+    //预留时间给其他线程，比如音频视频线程去释放资源，突然点击停止，其他子线程还在猛烈执行，当执行到某个库时，已经被释放了
     //释放资源
-    free();
+    std::thread([this](){
+        SDL_Delay(100);
+        free();
+    }).detach();
 }
 bool VideoPlayer::isPlaying(){
     return _state == VideoPlayer::Playing;
@@ -103,6 +109,10 @@ void VideoPlayer::readFile(){
 
         //初始化完毕，发送信号
         emit initFinished(this);
+
+        //改变状态
+        setState(VideoPlayer::Playing);
+
 //        从输入文件中读取数据
         while(_state != Stopped){
             //确保每次读取到的pkt都是新的，若在while循环外面，则每次加入list中的pkt都将一模一样，为最后一次读取到的pkt

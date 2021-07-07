@@ -194,7 +194,7 @@ int VideoPlayer::decodeAudio(){
 //    while(_aPktList->empty()){
 //        _aMutex->wait();
 //    }
-    if(_aPktList.empty() || _state == Stopped){
+    if(_aPktList.empty()){
         _aMutex.unlock();
         return 0;
     }

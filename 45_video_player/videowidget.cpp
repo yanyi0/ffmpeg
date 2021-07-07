@@ -14,8 +14,10 @@ VideoWidget::~VideoWidget(){
     freeImage();
 }
 void VideoWidget::paintEvent(QPaintEvent *event){
+//    qDebug() << "-----木前有图片嘛-------";
     //第一次还没有图片直接返回
     if(!_image) return;
+//    qDebug() << "-----渲染图片嘛-------";
     //将图片绘制到当前组件上
     QPainter(this).drawImage(_rect,*_image);
 }
@@ -25,6 +27,7 @@ void VideoWidget::onPlayerStateChanged(VideoPlayer *player){
      freeImage();
 }
 void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPlayer::VideoSwsSpec &spec){
+    //qDebug() << "----------已经解码好了图片-------------";
     //释放之前的图片
     freeImage();
     //创建新的图片
