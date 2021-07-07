@@ -18,6 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(_player,&VideoPlayer::initFinished,this,&MainWindow::onPlayerInitFinished);
     connect(_player,&VideoPlayer::playFailed,this,&MainWindow::onPlayerPlayFailed);
     connect(_player,&VideoPlayer::frameDecoded,ui->videoWidget,&VideoWidget::onPlayerFrameDecoded);
+    //停止视频之后选择一个新的视频，播放器切换到VideoWidget，调用paint方法显示图片，里面的图片_image是上一个视频停止前的最后一张图片，且点击停止已经释放了_vSwsOutFrame
+    //如果去渲染这张图片dramImage，会访问已经释放了的内存，导致闪退，也要监听VideoPlayer状态的改变，当为停止状态时，_image为上一个视频停止前的这一帧,要释放掉
+    connect(_player,&VideoPlayer::stateChanged,ui->videoWidget,&VideoWidget::onPlayerStateChanged);
     //设置音量滑块的范围
     ui->volumnSlider->setRange(VideoPlayer::Volumn::Min,VideoPlayer::Volumn::Max);
     ui->volumnSlider->setValue(ui->volumnSlider->maximum());

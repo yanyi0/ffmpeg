@@ -11,10 +11,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent)
    qDebug() << "VideoWidget::VideoWidget";
 }
 VideoWidget::~VideoWidget(){
-    if(_image){
-        delete _image;
-        _image = nullptr;
-    }
+    freeImage();
 }
 void VideoWidget::paintEvent(QPaintEvent *event){
     //第一次还没有图片直接返回
@@ -22,12 +19,14 @@ void VideoWidget::paintEvent(QPaintEvent *event){
     //将图片绘制到当前组件上
     QPainter(this).drawImage(_rect,*_image);
 }
+void VideoWidget::onPlayerStateChanged(VideoPlayer *player){
+     if(player->getState() != VideoPlayer::Stopped) return;
+     qDebug() << "----------VideoWidget::onPlayerStateChanged------------";
+     freeImage();
+}
 void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPlayer::VideoSwsSpec &spec){
     //释放之前的图片
-    if(_image){
-       delete  _image;
-       _image = nullptr;
-    }
+    freeImage();
     //创建新的图片
     if(data != nullptr) {
         //保存转化格式后的这一帧图片
@@ -66,9 +65,15 @@ void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPl
         dx = (w-dw) >> 1;
         dy = (h-dh) >> 1;
 
-        qDebug() << "缩放后的视频尺寸矩形框" << dx << dy << dw << dh;
+//        qDebug() << "缩放后的视频尺寸矩形框" << dx << dy << dw << dh;
         _rect = QRect(dx,dy,dw,dh);
     }
 
     update();
+}
+void VideoWidget::freeImage(){
+    if(_image){
+       delete  _image;
+       _image = nullptr;
+    }
 }

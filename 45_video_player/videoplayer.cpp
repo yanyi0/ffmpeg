@@ -57,7 +57,9 @@ bool VideoPlayer::isPlaying(){
 }
 //转成C语言字符串防止出现乱码666-> 666\0 后面要加1,写引用防止拷贝构造函数
 void VideoPlayer::setFilename(QString &filename){
-    char *file = filename.toUtf8().data();
+//    const char *file = filename.toUtf8().data();
+    //C++字符串转C语言字符串，防止路径名出错
+    const char *file = filename.toStdString().c_str();
     memcpy(_filename,file,strlen(file) + 1);
 }
 int64_t VideoPlayer::getDuration(){

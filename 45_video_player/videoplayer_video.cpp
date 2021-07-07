@@ -75,10 +75,20 @@ void VideoPlayer::clearVideoPktList(){
     _vMutex.unlock();
 }
 void VideoPlayer::freeVideo(){
-
+    clearVideoPktList();
+    avcodec_free_context(&_vDecodeCtx);
+    av_frame_free(&_vSwsInFrame);
+    if(_vSwsOutFrame){
+        av_freep(&_vSwsOutFrame->data[0]);
+        av_frame_free(&_vSwsOutFrame);
+    }
+    sws_freeContext(_vSwsCtx);
+    _vSwsCtx = nullptr;
 }
 void VideoPlayer::decodeVideo(){
     while (true) {
+        //如果是停止状态，会调用free，就不用再去解码，重采样，渲染，导致访问释放了的内存空间，会闪退
+        if(_state == Stopped) break;
         _vMutex.lock();
         if(_vPktList.empty()){
             _vMutex.unlock();
