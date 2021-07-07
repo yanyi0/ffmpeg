@@ -84,7 +84,7 @@ void MainWindow::on_openFileBtn_clicked()
         //选取单个文件
         QString filename = QFileDialog::getOpenFileName(
                     this, "选择要播放的文件",
-                    "/Users/cloud/Documents/iOS/音视频/TestMusic/素材/",
+                    "/Users/cloud/Documents/iOS/AudioVideo/TestMusic/素材/",
                     "所有文件 (*.*);;"
                     "多媒体文件 (*.mp3 *.aac *.wav *.flac *.mp4 *.avi *.mkv *.rmvb *.mov)");
         qDebug() << "打开文件path=" << filename;
