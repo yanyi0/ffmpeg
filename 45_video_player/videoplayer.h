@@ -78,8 +78,10 @@ public:
     State getState();
     /* 设置文件名 */
     void setFilename(QString &filename);
-    /* 获取总时长(单位是微秒，1秒 = 10^3毫秒 = 10^6微妙) */
-    int64_t getDuration();
+    /* 获取总时长(单位是秒，1秒 = 10^3毫秒 = 10^6微妙) */
+    int getDuration();
+    //当前播放时刻 秒
+    int getCurrent();
     /* 设置音量 */
     void setVolumn(int volumn);
     /* 获取当前音量 */
@@ -189,6 +191,8 @@ private:
     void fataError();
 signals:
    void stateChanged(VideoPlayer *player);
+   //播放时间变化
+   void timeChanged(VideoPlayer *player);
    void initFinished(VideoPlayer *player);
    void playFailed(VideoPlayer *player);
    void frameDecoded(VideoPlayer *player,uint8_t *data,VideoSwsSpec &spec);

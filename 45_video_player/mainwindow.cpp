@@ -15,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
     //创建播放器
     _player = new VideoPlayer();
     connect(_player,&VideoPlayer::stateChanged,this,&MainWindow::onPlayerStateChanged);
+    //时间进度条变化
+    connect(_player,&VideoPlayer::timeChanged,this,&MainWindow::onPlayerTimeChanged);
     connect(_player,&VideoPlayer::initFinished,this,&MainWindow::onPlayerInitFinished);
     connect(_player,&VideoPlayer::playFailed,this,&MainWindow::onPlayerPlayFailed);
     connect(_player,&VideoPlayer::frameDecoded,ui->videoWidget,&VideoWidget::onPlayerFrameDecoded);
@@ -38,6 +40,11 @@ void MainWindow::onPlayerInitFinished(VideoPlayer *player){
     ui->currentSlider->setRange(0,player->getDuration());
     //显示时间到label上面
     ui->durationLabel->setText(getTimeText(player->getDuration()));
+}
+
+void MainWindow::onPlayerTimeChanged(VideoPlayer *player){
+    //音频播放时间设置滚动条和label
+    ui->currentSlider->setValue(player->getCurrent());
 }
 
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){
@@ -150,7 +157,7 @@ QString MainWindow::getTimeText(int value){
     //    int m = seconds%3600/60;
     //    int m = seconds/60%60;
     //    int s = seconds%60;
-    int64_t seconds = value / 1000000;
+//    int64_t seconds = value / 1000000;
     //前面补0表明至少是两位，后面取最右边两位
 //    QString h = QString("0%1").arg(seconds/3600).right(2);
 //    QString m = QString("0%1").arg(seconds%3600/60).right(2);
@@ -160,9 +167,9 @@ QString MainWindow::getTimeText(int value){
     //QString进行格式化
     QLatin1Char fillChar = QLatin1Char('0');
     return QString("%1:%2:%3")
-            .arg(seconds/3600,2,10,fillChar)
-            .arg(seconds%3600/60,2,10,fillChar)
-            .arg(seconds%60,2,10,fillChar);
+            .arg(value/3600,2,10,fillChar)
+            .arg(value%3600/60,2,10,fillChar)
+            .arg(value%60,2,10,fillChar);
 }
 
 void MainWindow::on_muteBtn_clicked()

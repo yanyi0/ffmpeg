@@ -74,9 +74,15 @@ void VideoPlayer::setFilename(QString &filename){
     const char *file = filename.toStdString().c_str();
     memcpy(_filename,file,strlen(file) + 1);
 }
-int64_t VideoPlayer::getDuration(){
-    return _fmtCtx ? _fmtCtx->duration:0;
+int VideoPlayer::getDuration(){
+    //四舍五入，否则8.9会变成8，滑动条定格在距离终点9的8的位置
+    return _fmtCtx ? round(_fmtCtx->duration/1000000.0):0;
 }
+//总时长四舍五入
+int VideoPlayer::getCurrent(){
+    return round(_aClock);
+}
+
 void VideoPlayer::setVolumn(int volumn){
     _volumn = volumn;
 }

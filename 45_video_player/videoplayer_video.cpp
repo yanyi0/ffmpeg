@@ -76,6 +76,7 @@ void VideoPlayer::clearVideoPktList(){
     _vMutex.unlock();
 }
 void VideoPlayer::freeVideo(){
+    _vClock = 0;
     clearVideoPktList();
     avcodec_free_context(&_vDecodeCtx);
     av_frame_free(&_vSwsInFrame);
@@ -126,11 +127,17 @@ void VideoPlayer::decodeVideo(){
             //像素格式转换
             //_vSwsInFrame(yuv420p) -> _vSwsOutFrame(rgb24)
             sws_scale(_vSwsCtx,_vSwsInFrame->data,_vSwsInFrame->linesize,0,_vSwsInFrame->height,_vSwsOutFrame->data,_vSwsOutFrame->linesize);
-            //如果视频包多早解码出来，就要等待对应的音频时钟到达
-            //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
-            while(_vClock > _aClock && _state == Playing){
-                SDL_Delay(5);
+
+            if(_aStream != nullptr){//有音频
+                //如果视频包多早解码出来，就要等待对应的音频时钟到达
+                //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
+                while(_vClock > _aClock && _state == Playing){
+                    SDL_Delay(5);
+                }
+            }else{
+                //TODO 没有音频的情况
             }
+
 //            qDebug() << _vSwsOutFrame->data[0];
             //发出信号
             emit frameDecoded(this,_vSwsOutFrame->data[0],_vSwsOutSpec);

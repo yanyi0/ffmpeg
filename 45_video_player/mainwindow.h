@@ -18,6 +18,7 @@ public:
 
 private slots:
     void onPlayerStateChanged(VideoPlayer *player);
+    void onPlayerTimeChanged(VideoPlayer *player);
     void onPlayerInitFinished(VideoPlayer *player);
     void onPlayerPlayFailed(VideoPlayer *player);
 
