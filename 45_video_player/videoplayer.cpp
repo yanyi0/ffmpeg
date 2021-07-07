@@ -1,5 +1,9 @@
 #include "videoplayer.h"
 #include <thread>
+
+#define AUDIO_MAX_PKT_SIZE 1000
+#define VIDEO_MAX_PKT_SIZE 500
+
 #pragma mark - 构造析构
 VideoPlayer::VideoPlayer(QObject *parent) : QObject(parent)
 {
@@ -116,9 +120,15 @@ void VideoPlayer::readFile(){
 //        setState(VideoPlayer::Playing);
 
 //        从输入文件中读取数据
+        //确保每次读取到的pkt都是新的，在while循环外面，则每次加入list中的pkt都不会将一模一样，不为最后一次读取到的pkt，为全新的pkt，调用了拷贝构造函数
+        AVPacket pkt;
         while(_state != Stopped){
-            //确保每次读取到的pkt都是新的，若在while循环外面，则每次加入list中的pkt都将一模一样，为最后一次读取到的pkt
-            AVPacket pkt;
+            //不要讲文件中的压缩数据一次性读取到内存中，控制下大小
+            if(_vPktList.size() >= VIDEO_MAX_PKT_SIZE || _aPktList.size() >= AUDIO_MAX_PKT_SIZE){
+                SDL_Delay(10);
+                continue;
+            }
+//            qDebug() << _vPktList.size() << _aPktList.size();
             ret = av_read_frame(_fmtCtx,&pkt);
             if(ret == 0){
                 if(pkt.stream_index == _aStream->index){//读取到的是音频数据
@@ -127,6 +137,8 @@ void VideoPlayer::readFile(){
                 }else if(pkt.stream_index == _vStream->index){//读取到的是视频数据
 //                    qDebug() << "--------读取视频-------";
                     addVideoPkt(pkt);
+                }else{//如果不是音频、视频流，直接释放，防止内存泄露
+                    av_packet_unref(&pkt);
                 }
             }else if(ret == AVERROR_EOF){
                 qDebug() << "已经读取到文件尾部";

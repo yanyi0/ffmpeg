@@ -116,10 +116,9 @@ private:
     int _aSwrOutIdx = 0;
     //音频重采样后输出的PCM数据大小
     int _aSwrOutSize = 0;
-    //音量
-    int _volumn = Max;
-    //经营
-    bool _mute = false;
+    //音频时钟
+    double _aClock = 0;
+
     //初始化音频信息
     int initAudioInfo();
     //初始化SDL
@@ -162,12 +161,18 @@ private:
     void clearVideoPktList();
     //解码视频
     void decodeVideo();
+    //视频时钟
+    double _vClock = 0;
 
     /***** 其他 *****/
     //解封装上下文
     AVFormatContext *_fmtCtx = nullptr;
-
     int initDecoder(AVCodecContext **decodeCtx,AVStream **stream,AVMediaType type);
+    //音量
+    int _volumn = Max;
+    //静音
+    bool _mute = false;
+
 
     //保留播放器当前状态
     State _state = Stopped;

@@ -106,6 +106,13 @@ void VideoPlayer::decodeVideo(){
 
         //发送数据到解码器
         int ret = avcodec_send_packet(_vDecodeCtx,&pkt);
+
+        //视频时钟 视频用dts，音频用pts
+        if(pkt.dts != AV_NOPTS_VALUE){
+            _vClock = av_q2d(_vStream->time_base) * pkt.dts;
+//            qDebug() << _vClock;
+        }
+
         //释放pkt
         av_packet_unref(&pkt);
         CONTINUE(avcodec_send_packet);
@@ -116,13 +123,14 @@ void VideoPlayer::decodeVideo(){
                 break;//结束本次循环，重新从_vPktList取出包进行解码
             }else BREAK(avcodec_receive_frame);
 
-            //TODO 假停顿
-            // 1000 / 30
-            SDL_Delay(33);
             //像素格式转换
             //_vSwsInFrame(yuv420p) -> _vSwsOutFrame(rgb24)
             sws_scale(_vSwsCtx,_vSwsInFrame->data,_vSwsInFrame->linesize,0,_vSwsInFrame->height,_vSwsOutFrame->data,_vSwsOutFrame->linesize);
-
+            //如果视频包多早解码出来，就要等待对应的音频时钟到达
+            //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
+            while(_vClock > _aClock && _state == Playing){
+                SDL_Delay(5);
+            }
 //            qDebug() << _vSwsOutFrame->data[0];
             //发出信号
             emit frameDecoded(this,_vSwsOutFrame->data[0],_vSwsOutSpec);

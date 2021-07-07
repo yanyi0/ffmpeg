@@ -203,6 +203,11 @@ int VideoPlayer::decodeAudio(){
     AVPacket &pkt = _aPktList.front();
     // 发送压缩数据到解码器
     int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
+    //音频包应该在多少秒播放
+    if(pkt.pts != AV_NOPTS_VALUE){
+      _aClock = av_q2d(_aStream->time_base) * pkt.pts;
+    }
+
     //释放pkt
     av_packet_unref(&pkt);
 //    qDebug() << "释放pkt后pkt地址" << &pkt;
