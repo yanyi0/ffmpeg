@@ -16,8 +16,11 @@ VideoPlayer::VideoPlayer(QObject *parent) : QObject(parent)
     }
 }
 VideoPlayer::~VideoPlayer(){
-    free();
-
+    //窗口关闭停掉子线程
+    stop();
+//    setState(Stopped);
+    //若不该为Stopped状态，线程还在后台执行未停止
+//    free();
     SDL_Quit();
 }
 #pragma mark - 公有方法
@@ -56,13 +59,13 @@ void VideoPlayer::stop(){
     if(_state == VideoPlayer::Stopped) return;
     //改变状态
     setState(VideoPlayer::Stopped);
-
+    free();
     //预留时间给其他线程，比如音频视频线程去释放资源，突然点击停止，其他子线程还在猛烈执行，当执行到某个库时，已经被释放了
     //释放资源
-    std::thread([this](){
-        SDL_Delay(100);
-        free();
-    }).detach();
+//    std::thread([this](){
+//        SDL_Delay(100);
+//        free();
+//    }).detach();
 }
 bool VideoPlayer::isPlaying(){
     return _state == VideoPlayer::Playing;
