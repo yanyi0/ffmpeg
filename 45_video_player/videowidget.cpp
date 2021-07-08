@@ -27,11 +27,17 @@ void VideoWidget::onPlayerStateChanged(VideoPlayer *player){
      freeImage();
      //黑屏 图片释放掉之后变黑屏
      update();
+     qDebug() << "VideoWidget::onPlayerStateChanged" << _image;
+
 }
 void VideoWidget::onPlayerFrameDecoded(VideoPlayer *player,uint8_t *data,VideoPlayer::VideoSwsSpec &spec){
+    //有可能点击了停止按钮后，还在继续解码下一帧，先收到onPlayerStateChanged，再onPlayerFrameDecoded，播放下一个视频的时候，会闪现前一个视频的最后一帧
+    //杜绝最后一帧图片还显示为上一个视频的图片
+     if(player->getState() == VideoPlayer::Stopped) return;
 //    qDebug() << "----------已经解码好了图片-------------";
     //释放之前的图片
     freeImage();
+//    qDebug() << "VideoWidget::onPlayerFrameDecoded" << _image;
     //创建新的图片
     if(data != nullptr) {
         //保存转化格式后的这一帧图片

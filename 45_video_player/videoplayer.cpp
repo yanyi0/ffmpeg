@@ -59,7 +59,11 @@ void VideoPlayer::stop(){
     if(_state == VideoPlayer::Stopped) return;
     //改变状态
     setState(VideoPlayer::Stopped);
+    _state = Stopped;
+    //释放资源
     free();
+    //通知外界
+    emit stateChanged(this);
     //预留时间给其他线程，比如音频视频线程去释放资源，突然点击停止，其他子线程还在猛烈执行，当执行到某个库时，已经被释放了
     //释放资源
 //    std::thread([this](){
