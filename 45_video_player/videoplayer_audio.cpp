@@ -106,8 +106,6 @@ int VideoPlayer::initSDL(){
         qDebug() << "SDL_OpenAudio Error" << SDL_GetError();
         return -1;
     }
-    //开始播放pcm
-    SDL_PauseAudio(0);
     return 0;
 }
 void VideoPlayer::sdlAudioCallbackFunc(void *userdata, Uint8 *stream, int len){

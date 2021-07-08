@@ -35,18 +35,15 @@ void VideoPlayer:: play(){
         std::thread([this](){
             readFile();
         }).detach();
+    }else{
+        //改变状态
+        setState(VideoPlayer::Playing);
     }
-//    else{
-//        //改变状态
-//        setState(VideoPlayer::Playing);
-//    }
     //解封装，解码，播放，音视频同步
     //创建子线程去解码
     //解码后的格式不一定是我们播放器想要的
     //PCM格式不是SDL支持的 S16 44100
     //YUV RGB
-    //改变状态
-    setState(VideoPlayer::Playing);
 }
 void VideoPlayer::pause(){
     if(_state != VideoPlayer::Playing) return;
@@ -58,7 +55,7 @@ void VideoPlayer::pause(){
 void VideoPlayer::stop(){
     if(_state == VideoPlayer::Stopped) return;
     //改变状态
-    setState(VideoPlayer::Stopped);
+//    setState(VideoPlayer::Stopped);
     _state = Stopped;
     //释放资源
     free();
@@ -129,8 +126,18 @@ void VideoPlayer::readFile(){
         //初始化完毕，发送信号
         emit initFinished(this);
 //        qDebug() << "--------改变状态-------";
-        //改变状态 要在读取线程的前面，否则导致解码循环提前退出，解码循环读取到时Stop状态直接break，再也不进入 无法解码 一直黑屏
-//        setState(VideoPlayer::Playing);
+        //改变状态 要在读取线程的前面，否则导致解码循环提前退出，解码循环读取到时Stop状态直接break，再也不进入 无法解码 一直黑屏或没有声音，
+        //也可能SDL音频子线程一开始在Stopped，就退出了
+        setState(VideoPlayer::Playing);
+
+        //音频子线程开始工作:开始播放pcm
+        SDL_PauseAudio(0);
+
+        //视频子线程开始工作开启新的线程去解码视频数据
+        std::thread([this](){
+    //        qDebug() << "------------------开启新的线程解码数据--------------";
+            decodeVideo();
+        }).detach();
 
 //        从输入文件中读取数据
         //确保每次读取到的pkt都是新的，在while循环外面，则每次加入list中的pkt都不会将一模一样，不为最后一次读取到的pkt，为全新的pkt，调用了拷贝构造函数

@@ -11,11 +11,6 @@ int VideoPlayer::initVideoInfo(){
     ret = initSws();
     RET(initSws);
 
-    //开启新的线程去解码视频数据
-    std::thread([this](){
-//        qDebug() << "------------------开启新的线程解码数据--------------";
-        decodeVideo();
-    }).detach();
     return 0;
 }
 //初始化视频像素格式转换
