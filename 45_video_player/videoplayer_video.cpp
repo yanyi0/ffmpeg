@@ -132,7 +132,7 @@ void VideoPlayer::decodeVideo(){
             //_vSwsInFrame(yuv420p) -> _vSwsOutFrame(rgb24)
             sws_scale(_vSwsCtx,_vSwsInFrame->data,_vSwsInFrame->linesize,0,_vSwsInFrame->height,_vSwsOutFrame->data,_vSwsOutFrame->linesize);
 
-            if(_aStream != nullptr){//有音频
+            if(_hasAudio){//有音频
                 //如果视频包多早解码出来，就要等待对应的音频时钟到达
                 //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
                 while(_vTime > _aTime && _state == Playing){

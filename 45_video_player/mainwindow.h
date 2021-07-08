@@ -26,7 +26,7 @@ private slots:
 
     void on_openFileBtn_clicked();
 
-    void on_currentSlider_valueChanged(int value);
+    void on_timeSlider_valueChanged(int value);
 
     void on_volumnSlider_valueChanged(int value);
 

@@ -81,8 +81,10 @@ public:
     void setFilename(QString &filename);
     /* 获取总时长(单位是秒，1秒 = 10^3毫秒 = 10^6微妙) */
     int getDuration();
-    //当前播放时刻 秒
+    /* 当前播放时刻 秒 */
     int getTime();
+    /* 设置当前播放时刻(单位是秒) */
+    void setTime(int time);
     /* 设置音量 */
     void setVolumn(int volumn);
     /* 获取当前音量 */
@@ -123,6 +125,8 @@ private:
     double _aTime = 0;
     //音频资源是否可以释放
     bool _aCanFree = false;
+    //是否有音频流
+    bool _hasAudio = false;
 
     //初始化音频信息
     int initAudioInfo();
@@ -170,6 +174,8 @@ private:
     double _vTime = 0;
     //视频资源是否可以释放
     bool _vCanFree = false;
+    //是否有视频流
+    bool _hasVideo = false;
 
     /***** 其他 *****/
     //解封装上下文
@@ -181,13 +187,14 @@ private:
     int _volumn = Max;
     //静音
     bool _mute = false;
-
     //保留播放器当前状态
     State _state = Stopped;
     //改变状态
     void setState(State state);
     /* 文件名 */
     char _filename[512];
+    /* 外面设置的当前播放时刻(用于完成seek功能) 不要为0，有可能回退到0，但不可能回退到-1，-1表示没有人做seek操作 */
+    int _seekTime = -1;
     /* 读取文件 */
     void readFile();
     //释放资源

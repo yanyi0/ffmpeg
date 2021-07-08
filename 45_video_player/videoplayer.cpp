@@ -86,7 +86,9 @@ int VideoPlayer::getDuration(){
 int VideoPlayer::getTime(){
     return round(_aTime);
 }
-
+void VideoPlayer::setTime(int seekTime){
+   _seekTime = seekTime;
+}
 void VideoPlayer::setVolumn(int volumn){
     _volumn = volumn;
 }
@@ -114,10 +116,10 @@ void VideoPlayer::readFile(){
         av_dump_format(_fmtCtx,0,_filename,0);
         fflush(stderr);
         //初始化音频信息
-        bool hasAudio = initAudioInfo() >= 0;
+        _hasAudio = initAudioInfo() >= 0;
         //初始化视频信息
-        bool hasVideo = initVideoInfo() >= 0;
-        if(!hasAudio && !hasVideo)
+        _hasVideo = initVideoInfo() >= 0;
+        if(!_hasAudio && !_hasVideo)
         {
             fataError();
             return;
@@ -130,10 +132,10 @@ void VideoPlayer::readFile(){
         //也可能SDL音频子线程一开始在Stopped，就退出了
         setState(VideoPlayer::Playing);
 
-        //音频子线程开始工作:开始播放pcm
+        //音频解码子线程开始工作:开始播放pcm
         SDL_PauseAudio(0);
 
-        //视频子线程开始工作开启新的线程去解码视频数据
+        //视频解码子线程开始工作:开启新的线程去解码视频数据
         std::thread([this](){
     //        qDebug() << "------------------开启新的线程解码数据--------------";
             decodeVideo();
@@ -221,8 +223,8 @@ void VideoPlayer::setState(State state){
     emit stateChanged(this);
 }
 void VideoPlayer::free(){
-    while (_aStream && !_aCanFree);
-    while (_vStream && !_vCanFree);
+    while (_hasAudio && !_aCanFree);
+    while (_hasVideo && !_vCanFree);
     while (!_fmtCtxCanFree);
 
     avformat_close_input(&_fmtCtx);

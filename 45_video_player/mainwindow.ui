@@ -93,7 +93,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
-         <widget class="VideoSlider" name="currentSlider">
+         <widget class="VideoSlider" name="timeSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -109,7 +109,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="currentLabel">
+         <widget class="QLabel" name="timeLabel">
           <property name="text">
            <string>00:00:00</string>
           </property>

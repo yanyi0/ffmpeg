@@ -38,14 +38,14 @@ MainWindow::~MainWindow()
 void MainWindow::onPlayerInitFinished(VideoPlayer *player){
     qDebug() << player->getDuration();
     //设置slider进度条的伸缩范围
-    ui->currentSlider->setRange(0,player->getDuration());
+    ui->timeSlider->setRange(0,player->getDuration());
     //显示时间到label上面
     ui->durationLabel->setText(getTimeText(player->getDuration()));
 }
 
 void MainWindow::onPlayerTimeChanged(VideoPlayer *player){
     //音频播放时间设置滚动条和label
-    ui->currentSlider->setValue(player->getTime());
+    ui->timeSlider->setValue(player->getTime());
 }
 
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){
@@ -60,18 +60,18 @@ void MainWindow::onPlayerStateChanged(VideoPlayer *player){
     if(state == VideoPlayer::Stopped){
        ui->playBtn->setEnabled(false);
        ui->stopBtn->setEnabled(false);
-       ui->currentSlider->setEnabled(false);
+       ui->timeSlider->setEnabled(false);
        ui->volumnSlider->setEnabled(false);
        ui->muteBtn->setEnabled(false);
 
-       ui->currentLabel->setText(getTimeText(0));
-       ui->currentSlider->setValue(0);
+       ui->timeLabel->setText(getTimeText(0));
+       ui->timeSlider->setValue(0);
        //显示打开文件的页面
        ui->playWidget->setCurrentWidget(ui->openFilePage);
     }else{
         ui->playBtn->setEnabled(true);
         ui->stopBtn->setEnabled(true);
-        ui->currentSlider->setEnabled(true);
+        ui->timeSlider->setEnabled(true);
         ui->volumnSlider->setEnabled(true);
         ui->muteBtn->setEnabled(true);
 
@@ -129,9 +129,9 @@ void MainWindow::on_openFileBtn_clicked()
 //    qDebug() << file_name << file_path;
 }
 
-void MainWindow::on_currentSlider_valueChanged(int value)
+void MainWindow::on_timeSlider_valueChanged(int value)
 {
-    ui->currentLabel->setText(getTimeText(value));
+    ui->timeLabel->setText(getTimeText(value));
 //    ui->currentLabel->setText("00:00:00");
 //    ui->currentLabel->setText(QString("%1").arg(value));
 }
