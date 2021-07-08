@@ -57,6 +57,14 @@ void MainWindow::onPlayerTimeChanged(VideoPlayer *player){
 
 void MainWindow::onPlayerStateChanged(VideoPlayer *player){
 //    qDebug() << "-----------MainWindow::onPlayerStateChanged-----------";
+    if(ui == nullptr) {
+        qDebug() << "ui已经销毁了";
+        return;
+    }
+    if(player == nullptr) {
+        qDebug() << "player已经销毁了";
+        return;
+    }
     VideoPlayer::State state = player->getState();
     if(state == VideoPlayer::Playing){
         ui->playBtn->setText("暂停");

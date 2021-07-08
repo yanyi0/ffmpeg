@@ -16,6 +16,8 @@ VideoPlayer::VideoPlayer(QObject *parent) : QObject(parent)
     }
 }
 VideoPlayer::~VideoPlayer(){
+    //关闭播放器标记
+    _isClosePlayer = true;
     //窗口关闭停掉子线程
     stop();
 //    setState(Stopped);
@@ -60,6 +62,7 @@ void VideoPlayer::stop(){
     //释放资源
     free();
     //通知外界
+    if(_isClosePlayer) return;
     emit stateChanged(this);
     //预留时间给其他线程，比如音频视频线程去释放资源，突然点击停止，其他子线程还在猛烈执行，当执行到某个库时，已经被释放了
     //释放资源
