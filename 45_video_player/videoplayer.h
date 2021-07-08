@@ -127,6 +127,8 @@ private:
     bool _aCanFree = false;
     //是否有音频流
     bool _hasAudio = false;
+    /* 外面设置的当前播放时刻(用于完成seek功能) 不要为0，有可能回退到0，但不可能回退到-1，-1表示没有人做seek操作 */
+    int _aSeekTime = -1;
 
     //初始化音频信息
     int initAudioInfo();
@@ -176,6 +178,8 @@ private:
     bool _vCanFree = false;
     //是否有视频流
     bool _hasVideo = false;
+    /* 外面设置的当前播放时刻(用于完成seek功能) 不要为0，有可能回退到0，但不可能回退到-1，-1表示没有人做seek操作 */
+    int _vSeekTime = -1;
 
     /***** 其他 *****/
     //解封装上下文
@@ -195,8 +199,6 @@ private:
     char _filename[512];
     /* 外面设置的当前播放时刻(用于完成seek功能) 不要为0，有可能回退到0，但不可能回退到-1，-1表示没有人做seek操作 */
     int _seekTime = -1;
-    /* 关闭播放器标志 */
-    bool _isClosePlayer = false;
     /* 读取文件 */
     void readFile();
     //释放资源

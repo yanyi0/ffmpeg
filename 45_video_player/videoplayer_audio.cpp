@@ -138,6 +138,7 @@ void VideoPlayer::freeAudio(){
     _aSwrOutSize = 0;
     _aStream = nullptr;
     _aCanFree = false;
+    _aSeekTime = -1;
 
     clearAudioPktList();
     avcodec_free_context(&_aDecodeCtx);
@@ -215,6 +216,18 @@ int VideoPlayer::decodeAudio(){
       emit timeChanged(this);
     }
 
+    //如果是视频，不能在这个位置判断(不能提前释放pkt,不然会导致B帧、P帧解码失败，画面撕裂)
+    //发现音频的时间是早于seekTime的，就丢弃，防止到seekTime的位置闪现
+    if(_aSeekTime >= 0){
+        if(_aTime < _aSeekTime){
+            //释放pkt
+            av_packet_unref(&pkt);
+            return 0;
+        }else{
+            _aSeekTime = -1;
+        }
+    }
+
     //释放pkt
     av_packet_unref(&pkt);
 //    qDebug() << "释放pkt后pkt地址" << &pkt;
@@ -223,6 +236,7 @@ int VideoPlayer::decodeAudio(){
 //    qDebug() << "pkt从链表中移除后" << &pkt;
     _aMutex.unlock();
     RET(avcodec_send_packet);
+
     // 获取解码后的数据
     ret = avcodec_receive_frame(_aDecodeCtx, _aSwrInFrame);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {

@@ -88,6 +88,7 @@ void VideoPlayer::freeVideo(){
     sws_freeContext(_vSwsCtx);
     _vSwsCtx = nullptr;
     _vStream = nullptr;
+    _vSeekTime = -1;
 }
 void VideoPlayer::decodeVideo(){
 //    qDebug() << "当前的播放器状态--------" << this->getState();
@@ -129,6 +130,16 @@ void VideoPlayer::decodeVideo(){
                 break;//结束本次循环，重新从_vPktList取出包进行解码
             }else BREAK(avcodec_receive_frame);
 
+            //一定要在解码成功后，再进行下面的判断,防止seek时，到达的是p帧，但前面的I帧已经被释放了，无法参考，这一帧的解码就会出现撕裂现象
+            //发现视频的时间是早于seekTime的，就丢弃，防止到seekTime的位置闪现
+            if(_vSeekTime >= 0){
+                if(_vTime < _vSeekTime){
+                    continue;
+                }else{
+                    _vSeekTime = -1;
+                }
+            }
+
             //像素格式转换
             //_vSwsInFrame(yuv420p) -> _vSwsOutFrame(rgb24)
             sws_scale(_vSwsCtx,_vSwsInFrame->data,_vSwsInFrame->linesize,0,_vSwsInFrame->height,_vSwsOutFrame->data,_vSwsOutFrame->linesize);
@@ -138,6 +149,7 @@ void VideoPlayer::decodeVideo(){
                 //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
                 while(_vTime > _aTime && _state == Playing){
 //                    SDL_Delay(5);
+//                    qDebug() << "当前的音视频时钟------" << _vTime << _aTime;
                 }
             }else{
                 //TODO 没有音频的情况
@@ -151,6 +163,7 @@ void VideoPlayer::decodeVideo(){
             memcpy(data,_vSwsOutFrame->data[0],_vSwsOutSpec.size);
             //发出信号
             emit frameDecoded(this,data,_vSwsOutSpec);
+            qDebug() << "渲染了一帧" << _vTime << "音频时间" << _aTime;
         }
     }
 }

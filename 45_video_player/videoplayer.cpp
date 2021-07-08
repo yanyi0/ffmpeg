@@ -16,8 +16,8 @@ VideoPlayer::VideoPlayer(QObject *parent) : QObject(parent)
     }
 }
 VideoPlayer::~VideoPlayer(){
-    //关闭播放器标记
-    _isClosePlayer = true;
+    //关闭播放器就不再对外发送消息
+    disconnect();
     //窗口关闭停掉子线程
     stop();
 //    setState(Stopped);
@@ -62,7 +62,7 @@ void VideoPlayer::stop(){
     //释放资源
     free();
     //通知外界
-    if(_isClosePlayer) return;
+//    if(_isClosePlayer) return;
     emit stateChanged(this);
     //预留时间给其他线程，比如音频视频线程去释放资源，突然点击停止，其他子线程还在猛烈执行，当执行到某个库时，已经被释放了
     //释放资源
@@ -153,9 +153,11 @@ void VideoPlayer::readFile(){
             //处理seek操作
             if(_seekTime >= 0){
                 int streamIdx;
-                if(_hasAudio){//有线使用音频流索引
+                if(_hasAudio){//优先使用音频流索引
+                  qDebug() << "seek优先使用，音频流索引" << _aStream->index;
                   streamIdx = _aStream->index;
                 }else{
+                  qDebug() << "seek优先使用，视频流索引" << _vStream->index;
                   streamIdx = _vStream->index;
                 }
                 //现实时间 -> 时间戳
@@ -167,6 +169,9 @@ void VideoPlayer::readFile(){
                     _seekTime = -1;
                 }else{//seek成功
                     qDebug() << "seek成功" << _seekTime << ts << streamIdx;
+                    //记录seek到了哪一帧，有可能是P帧或B,会导致seek向前找到I帧，此时就会比实际seek的值要提前几帧，现象是调到seek的帧时会快速的闪现I帧到seek的帧
+                    _vSeekTime = _seekTime;
+                    _aSeekTime = _seekTime;
                     _seekTime = -1;
                     //恢复时钟
                     _aTime = 0;
