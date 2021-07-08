@@ -181,8 +181,11 @@ void VideoPlayer::readFile(){
                     clearVideoPktList();
                 }
             }
+
+            int vSize = _vPktList.size();
+            int aSize = _aPktList.size();
             //不要讲文件中的压缩数据一次性读取到内存中，控制下大小
-            if(_vPktList.size() >= VIDEO_MAX_PKT_SIZE || _aPktList.size() >= AUDIO_MAX_PKT_SIZE){
+            if(vSize >= VIDEO_MAX_PKT_SIZE || aSize >= AUDIO_MAX_PKT_SIZE){
 //                SDL_Delay(10);
                 continue;
             }
@@ -198,18 +201,25 @@ void VideoPlayer::readFile(){
                 }else{//如果不是音频、视频流，直接释放，防止内存泄露
                     av_packet_unref(&pkt);
                 }
-            }else if(ret == AVERROR_EOF){
-//                qDebug() << "已经读取到文件尾部";
+            }else if(ret == AVERROR_EOF){//读到了文件尾部
+                if(vSize == 0 && aSize == 0){
+                    //说明文件正常播放完毕
+                    _fmtCtxCanFree = true;
+                    break;
+                }
                 //读取到文件尾部依然要在while循环中转圈圈，若break跳出循环，则无法seek往回读了
-//                break;
             }else{
                 ERROR_BUF;
                 qDebug() << "av_read_frame error" << errbuf;
                 continue;
             }
         }
-        //标记一下:_fmtCtx可以释放了
-        _fmtCtxCanFree = true;
+        if(_fmtCtxCanFree){//正常读取到文件尾部
+            stop();
+        }else{
+            //标记一下:_fmtCtx可以释放了
+            _fmtCtxCanFree = true;
+        }
 }
 //初始化解码器:根据传入的AVMediaType获取解码信息，要想外面获取到解码上下文，传入外边的解码上下文的地址，同理传入stream的地址,里面赋值后
 //外部能获取到，C语言中的指针改变传入的地址中的值
