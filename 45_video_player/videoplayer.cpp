@@ -80,7 +80,8 @@ void VideoPlayer::setFilename(QString &filename){
 }
 int VideoPlayer::getDuration(){
     //四舍五入，否则8.9会变成8，滑动条定格在距离终点9的8的位置
-    return _fmtCtx ? round(_fmtCtx->duration/1000000.0):0;
+    //ffmpeg时间转现实时间
+    return _fmtCtx ? round(_fmtCtx->duration * av_q2d(AV_TIME_BASE_Q)):0;
 }
 //总时长四舍五入
 int VideoPlayer::getTime(){
@@ -88,6 +89,7 @@ int VideoPlayer::getTime(){
 }
 void VideoPlayer::setTime(int seekTime){
    _seekTime = seekTime;
+   qDebug() << "setTime" << seekTime;
 }
 void VideoPlayer::setVolumn(int volumn){
     _volumn = volumn;
@@ -145,6 +147,32 @@ void VideoPlayer::readFile(){
         //确保每次读取到的pkt都是新的，在while循环外面，则每次加入list中的pkt都不会将一模一样，不为最后一次读取到的pkt，为全新的pkt，调用了拷贝构造函数
         AVPacket pkt;
         while(_state != Stopped){
+            //处理seek操作
+            if(_seekTime >= 0){
+                int streamIdx;
+                if(_hasAudio){//有线使用音频流索引
+                  streamIdx = _aStream->index;
+                }else{
+                  streamIdx = _vStream->index;
+                }
+                //现实时间 -> 时间戳
+                AVRational time_base = _fmtCtx->streams[streamIdx]->time_base;
+                int64_t ts = _seekTime/av_q2d(time_base);
+                ret = av_seek_frame(_fmtCtx,streamIdx,ts,AVSEEK_FLAG_BACKWARD);
+                if(ret < 0){//seek失败
+                    qDebug() << "seek失败" << _seekTime << ts << streamIdx;
+                    _seekTime = -1;
+                }else{//seek成功
+                    qDebug() << "seek成功" << _seekTime << ts << streamIdx;
+                    _seekTime = -1;
+                    //恢复时钟
+                    _aTime = 0;
+                    _vTime = 0;
+                    //清空之前读取的数据包
+                    clearAudioPktList();
+                    clearVideoPktList();
+                }
+            }
             //不要讲文件中的压缩数据一次性读取到内存中，控制下大小
             if(_vPktList.size() >= VIDEO_MAX_PKT_SIZE || _aPktList.size() >= AUDIO_MAX_PKT_SIZE){
 //                SDL_Delay(10);
@@ -163,8 +191,9 @@ void VideoPlayer::readFile(){
                     av_packet_unref(&pkt);
                 }
             }else if(ret == AVERROR_EOF){
-                qDebug() << "已经读取到文件尾部";
-                break;
+//                qDebug() << "已经读取到文件尾部";
+                //读取到文件尾部依然要在while循环中转圈圈，若break跳出循环，则无法seek往回读了
+//                break;
             }else{
                 ERROR_BUF;
                 qDebug() << "av_read_frame error" << errbuf;
@@ -227,6 +256,7 @@ void VideoPlayer::free(){
     while (_hasVideo && !_vCanFree);
     while (!_fmtCtxCanFree);
 
+    _seekTime = -1;
     avformat_close_input(&_fmtCtx);
     _fmtCtxCanFree = false;
     freeAudio();

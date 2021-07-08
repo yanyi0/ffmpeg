@@ -208,6 +208,7 @@ int VideoPlayer::decodeAudio(){
     int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
     //音频包应该在多少秒播放
     if(pkt.pts != AV_NOPTS_VALUE){
+//      qDebug() << _aStream->time_base.num << _aStream->time_base.den;
       _aTime = av_q2d(_aStream->time_base) * pkt.pts;
 //      qDebug() << _aClock;
       //通知外界:播放时间发生了改变

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "videoplayer.h"
+#include "videoslider.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,6 +22,9 @@ private slots:
     void onPlayerTimeChanged(VideoPlayer *player);
     void onPlayerInitFinished(VideoPlayer *player);
     void onPlayerPlayFailed(VideoPlayer *player);
+
+    //seek功能
+    void onSliderClicked(VideoSlider *slider);
 
     void on_stopBtn_clicked();
 

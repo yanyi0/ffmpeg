@@ -114,8 +114,9 @@ void VideoPlayer::decodeVideo(){
 
         //视频时钟 视频用dts，音频用pts
         if(pkt.dts != AV_NOPTS_VALUE){
+//            qDebug() << _vStream->time_base.num << _vStream->time_base.den;
             _vTime = av_q2d(_vStream->time_base) * pkt.dts;
-//            qDebug() << _vClock;
+//            qDebug() << _vTime;
         }
 
         //释放pkt
