@@ -93,7 +93,8 @@ void VideoPlayer::freeVideo(){
 void VideoPlayer::decodeVideo(){
 //    qDebug() << "当前的播放器状态--------" << this->getState();
     while (true) {
-//        qDebug() << "decodeVideo";
+        //如果是暂停状态,并且没有seek操作，暂停状态也能seek
+        if(_state == Paused && _vSeekTime == -1) continue;
         //如果是停止状态，会调用free，就不用再去解码，重采样，渲染，导致访问释放了的内存空间，会闪退
         if(_state == Stopped){
             _vCanFree = true;

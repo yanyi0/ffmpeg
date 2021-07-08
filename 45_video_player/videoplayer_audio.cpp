@@ -157,6 +157,7 @@ void VideoPlayer::sdlAudioCallback(Uint8 *stream, int len){
     SDL_memset(stream,0,len);
    //len:SDL音频缓冲区剩余的大小(音频缓冲区还未填充的大小)
     while (len > 0) {
+        if(_state == Paused) break;
         if(_state == Stopped){
             _aCanFree = true;
              break;
