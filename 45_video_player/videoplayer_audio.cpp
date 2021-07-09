@@ -153,6 +153,7 @@ void VideoPlayer::freeAudio(){
     SDL_CloseAudio();
 }
 void VideoPlayer::sdlAudioCallback(Uint8 *stream, int len){
+   //SDL缓冲区找解码器拉取符合播放格式的音频PCM流stream
    //清零(静音)
     SDL_memset(stream,0,len);
    //len:SDL音频缓冲区剩余的大小(音频缓冲区还未填充的大小)
@@ -193,7 +194,7 @@ void VideoPlayer::sdlAudioCallback(Uint8 *stream, int len){
     }
 }
 int VideoPlayer::decodeAudio(){
-//    qDebug() << "decodeAudio线程" << QThread::currentThreadId() << "QT";
+//    qDebug() << "decodeAudio线程" << QThread::currentThreadId() << "QT" << _aPktList.size();
     _aMutex.lock();
     //_aPktList中如果是空的，就进入等待，等待_aPktList中新加入解封装后的pkt发送信号signal通知到这儿，
     //有可能解封装很快就都解完成了，后面都没有新的pkt，也不会发送信号了,就会一直在这儿等
@@ -201,6 +202,7 @@ int VideoPlayer::decodeAudio(){
 //        _aMutex->wait();
 //    }
     if(_aPktList.empty()){
+        qDebug() << "_aPktList为空" << _aPktList.size();
         _aMutex.unlock();
         return 0;
     }
@@ -211,22 +213,24 @@ int VideoPlayer::decodeAudio(){
     if(pkt.pts != AV_NOPTS_VALUE){
 //      qDebug() << _aStream->time_base.num << _aStream->time_base.den;
       _aTime = av_q2d(_aStream->time_base) * pkt.pts;
-      qDebug() << "当前音频时间" <<_aTime << "seek时间" << _aSeekTime;
+//      qDebug() << "当前音频时间" <<_aTime << "seek时间" << _aSeekTime;
       //通知外界:播放时间发生了改变
       emit timeChanged(this);
     }
-
+//    qDebug() << "-----------------——_aTime:" << _aTime << "_aSeekTime" << _aSeekTime;
     //如果是视频，不能在这个位置判断(不能提前释放pkt,不然会导致B帧、P帧解码失败，画面撕裂)
     //发现音频的时间是早于seekTime的，就丢弃，防止到seekTime的位置闪现
-//    if(_aSeekTime >= 0){
-//        if(_aTime < _aSeekTime){
-//            //释放pkt
-//            av_packet_unref(&pkt);
-//            return 0;
-//        }else{
-//            _aSeekTime = -1;
-//        }
-//    }
+    if(_aSeekTime >= 0){
+        if(_aTime < _aSeekTime){
+            //释放pkt
+            av_packet_unref(&pkt);
+            _aPktList.pop_front();
+             _aMutex.unlock();
+            return 0;
+        }else{
+            _aSeekTime = -1;
+        }
+    }
 
     // 发送压缩数据到解码器
     int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
