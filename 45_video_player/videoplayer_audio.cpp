@@ -206,29 +206,30 @@ int VideoPlayer::decodeAudio(){
     }
     //取出list中的头部pkt
     AVPacket &pkt = _aPktList.front();
-    // 发送压缩数据到解码器
-    int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
+
     //音频包应该在多少秒播放
     if(pkt.pts != AV_NOPTS_VALUE){
 //      qDebug() << _aStream->time_base.num << _aStream->time_base.den;
       _aTime = av_q2d(_aStream->time_base) * pkt.pts;
-//      qDebug() << _aClock;
+      qDebug() << "当前音频时间" <<_aTime << "seek时间" << _aSeekTime;
       //通知外界:播放时间发生了改变
       emit timeChanged(this);
     }
 
     //如果是视频，不能在这个位置判断(不能提前释放pkt,不然会导致B帧、P帧解码失败，画面撕裂)
     //发现音频的时间是早于seekTime的，就丢弃，防止到seekTime的位置闪现
-    if(_aSeekTime >= 0){
-        if(_aTime < _aSeekTime){
-            //释放pkt
-            av_packet_unref(&pkt);
-            return 0;
-        }else{
-            _aSeekTime = -1;
-        }
-    }
+//    if(_aSeekTime >= 0){
+//        if(_aTime < _aSeekTime){
+//            //释放pkt
+//            av_packet_unref(&pkt);
+//            return 0;
+//        }else{
+//            _aSeekTime = -1;
+//        }
+//    }
 
+    // 发送压缩数据到解码器
+    int ret = avcodec_send_packet(_aDecodeCtx, &pkt);
     //释放pkt
     av_packet_unref(&pkt);
 //    qDebug() << "释放pkt后pkt地址" << &pkt;

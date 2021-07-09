@@ -92,7 +92,7 @@ int VideoPlayer::getTime(){
 }
 void VideoPlayer::setTime(int seekTime){
    _seekTime = seekTime;
-   qDebug() << "setTime" << seekTime;
+//   qDebug() << "setTime" << seekTime;
 }
 void VideoPlayer::setVolumn(int volumn){
     _volumn = volumn;
@@ -170,15 +170,15 @@ void VideoPlayer::readFile(){
                 }else{//seek成功
                     qDebug() << "seek成功" << _seekTime << ts << streamIdx;
                     //记录seek到了哪一帧，有可能是P帧或B,会导致seek向前找到I帧，此时就会比实际seek的值要提前几帧，现象是调到seek的帧时会快速的闪现I帧到seek的帧
+                    //清空之前读取的数据包
+                    clearAudioPktList();
+                    clearVideoPktList();
                     _vSeekTime = _seekTime;
                     _aSeekTime = _seekTime;
                     _seekTime = -1;
                     //恢复时钟
                     _aTime = 0;
                     _vTime = 0;
-                    //清空之前读取的数据包
-                    clearAudioPktList();
-                    clearVideoPktList();
                 }
             }
 

@@ -118,7 +118,7 @@ void VideoPlayer::decodeVideo(){
         if(pkt.dts != AV_NOPTS_VALUE){
 //            qDebug() << _vStream->time_base.num << _vStream->time_base.den;
             _vTime = av_q2d(_vStream->time_base) * pkt.dts;
-//            qDebug() << _vTime;
+            qDebug() << "当前视频时间"<< _vTime << "seek时间" << _vSeekTime;
         }
 
         //释放pkt
@@ -150,7 +150,7 @@ void VideoPlayer::decodeVideo(){
                 //有可能点击停止的时候，正在循环里面，停止后sdl free掉了，就不会再从音频list中取出包，_aClock就不会增大，下面while就死循环了，一直出不来，所以加Playing判断
                 while(_vTime > _aTime && _state == Playing){
 //                    SDL_Delay(5);
-//                    qDebug() << "当前的音视频时钟------" << _vTime << _aTime;
+                    qDebug() << "当前的音视频时钟------" << _vTime << _aTime;
                 }
             }else{
                 //TODO 没有音频的情况
