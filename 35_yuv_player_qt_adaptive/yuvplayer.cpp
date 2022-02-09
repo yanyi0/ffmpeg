@@ -13,6 +13,7 @@ extern "C" {
 }
 YuvPlayer::YuvPlayer(QWidget *parent) : QWidget(parent)
 {
+    //设置黑色背景
     setAttribute(Qt::WA_StyledBackground,true);
     setStyleSheet("background:black");
 }

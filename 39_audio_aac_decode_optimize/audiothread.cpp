@@ -11,8 +11,8 @@ extern "C" {
 #define INFILENAME "D:/音视频/TestMusic/H264_Decode/out.h264"
 #define OUTFILENAME "D:/音视频/TestMusic/H264_Decode/out_win.yuv"
 #else
-#define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Decode/out.h264"
-#define OUTFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/H264_Decode/out_0.yuv"
+#define INFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/Decode_AAC/out.aac"
+#define OUTFILENAME "/Users/cloud/Documents/iOS/音视频/TestMusic/Decode_AAC/out_code_optimize.pcm"
 #endif
 AudioThread::AudioThread(QObject *parent) : QThread(parent)
 {
@@ -48,11 +48,16 @@ void freeResources(){
 }
 
 void AudioThread::run(){
+    //44100_s16le_2 --> 48000_f32le_1 --> 48000_s32le_1 --> 44100_s16le_2
+    //最后转化回来的44100_s16le_2，11,947,928 字节相比44100_s16le_2_new，11,947,932 字节会有误差，4个字节，因为向上兼容了缓冲区1个样本数量,一个样本占用4个字节16*2/8
+    //若改为C语言,只改动文件操作fopen,fread,fwrite,fclose刷新缓冲区flush,缓冲区一般自动刷新，fclose也会刷新一次
     //输入参数
-    VideoDecodeSpec out;
+    AudioDecodeSpec out;
     out.filename = OUTFILENAME;
-    FFmpegs::h264Decode(INFILENAME,out);
-    qDebug() << "输出:" << out.width << out.height << out.fps << av_get_pix_fmt_name(out.pixFmt);
+    FFmpegs::audioDecode(INFILENAME,out);
+    qDebug() << "采样率:" << out.sampleRate;
+    qDebug() << "采样格式:" << av_get_sample_fmt_name(out.sampleFmt);
+    qDebug() << "声道数:" << av_get_channel_layout_nb_channels(out.chLayout);
 }
 
 

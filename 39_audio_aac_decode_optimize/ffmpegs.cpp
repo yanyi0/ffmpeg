@@ -1,13 +1,13 @@
 #include "ffmpegs.h"
 #include "QDebug"
 //输入缓冲区的大小
-#define IN_DATA_SIZE 4096
+#define IN_DATA_SIZE 20480
+//需要再次读取文件数据的阀值
+#define REFILL_THRESH 4096
 FFmpegs::FFmpegs()
 {
 
 }
-//记录解码出第多少帧
-static int frameIdx = 0;
 static int decode(AVCodecContext *ctx,AVPacket *pkt,AVFrame *frame,QFile &outFile){
     //发送压缩数据到解码器
     int ret = avcodec_send_packet(ctx,pkt);
@@ -16,9 +16,6 @@ static int decode(AVCodecContext *ctx,AVPacket *pkt,AVFrame *frame,QFile &outFil
         qDebug() << "avcodec_send_packet error" << errorbuf;
         return ret;
     }
-    //一帧图片的大小
-    int imgSize = av_image_get_buffer_size(ctx->pix_fmt,ctx->width,ctx->height,1);
-    qDebug() << "一帧图片的大小" << imgSize;
     while(true){
         //获取解码后的数据
         ret = avcodec_receive_frame(ctx,frame);
@@ -29,18 +26,11 @@ static int decode(AVCodecContext *ctx,AVPacket *pkt,AVFrame *frame,QFile &outFil
             qDebug() << "avcodec_receive_frame error" << errorbuf;
             return ret;
         }
-        //解码出图片第多少帧
-        qDebug() << "解码出第多少帧" << ++frameIdx;
         //将解码后的数据写入文件·
-        //直接写入不正确，中间会有数据间隔
-        //一帧图片中一行的y*高度=总共的Y的数量大小，一行的U*U的高度=总共U的数量大小，一行的V*V的高度
-        outFile.write((char *)frame->data[0],frame->linesize[0]*ctx->height);
-        outFile.write((char *)frame->data[1],frame->linesize[1]*ctx->height >> 1);
-        outFile.write((char *)frame->data[2],frame->linesize[2]*ctx->height >> 1);
-//        outFile.write((char *)frame->data[0],imgSize);
+        outFile.write((char *)frame->data[0],frame->linesize[0]);
     }
 }
-void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
+void FFmpegs::audioDecode(const char *inFilename,AudioDecodeSpec &out){
 
     //返回结果
     int ret = 0;
@@ -49,7 +39,8 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
 
     int inEnd = 0;
     //用来存放读取的文件数据
-    char inDataArray[IN_DATA_SIZE];
+    //加上AV_INPUT_BUFFER_PADDING_SIZE，是为了防止某些优化过的Reader一次性读取过多导致越界
+    char inDataArray[IN_DATA_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
     char *inData = inDataArray;
     //文件
     QFile inFile(inFilename);
@@ -65,8 +56,7 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
     //存放解码后的数据
     AVFrame *frame = nullptr;
     //获取解码器
-//    codec = avcodec_find_decoder_by_name("h264");
-    codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+    codec = avcodec_find_decoder_by_name("libfdk_aac");
     if(!codec){
         qDebug() << "avcodec_find_decoder_by_name not found";
         return;
@@ -83,6 +73,9 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
         qDebug() << "avcodec_alloc_context3 error";
         goto end;
     }
+    qDebug() << "ctx初始化采样率:" << ctx->sample_rate;
+    qDebug() << "ctx初始化采样格式:" << av_get_sample_fmt_name(ctx->sample_fmt) << ctx->sample_fmt;
+    qDebug() << "ctx初始化声道数:" << av_get_channel_layout_nb_channels(ctx->channel_layout) << ctx->channel_layout;
     //创建AVPacket
     pkt = av_packet_alloc();
     //初始化后pkt的大小
@@ -104,6 +97,9 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
        qDebug() << "avcodec_open2 error" << errorbuf;
        goto end;
     }
+    qDebug() << "ctx初始化打开解码器采样率:" << ctx->sample_rate;
+    qDebug() << "ctx初始化打开解码器采样格式:" << av_get_sample_fmt_name(ctx->sample_fmt) << ctx->sample_fmt;
+    qDebug() << "ctx初始化打开解码器声道数:" << av_get_channel_layout_nb_channels(ctx->channel_layout) << ctx->channel_layout;
     //打开文件
     if(!inFile.open(QFile::ReadOnly)){
         qDebug() << "file open error :" << inFile.fileName();
@@ -113,53 +109,76 @@ void FFmpegs::h264Decode(const char *inFilename,VideoDecodeSpec &out){
         qDebug() << "file open error :" << out.filename;
         goto end;
     }
-
     //解码
-    do{//即使到了文件尾部，也要再读取解析器中的数据，防止丢掉这一帧数据
-        //读取数据
-        inLen = inFile.read(inDataArray,IN_DATA_SIZE);
-        inEnd = !inLen;
-        //inData指向数组的首元素
+    //读取数据
+    while((inLen = inFile.read(inDataArray,IN_DATA_SIZE)) > 0){
+        //inData指向读取数据缓冲区的起始位置
         inData = inDataArray;
         //初始化后pkt的大小
 //        qDebug() << "传入解析器之前pkt大小:" << pkt->size;
-        //读取到的4096个字节一直处理完毕inLen为0之后再去文件中重新读取数据，那假设最后几个字节不够解码出整数张帧的大小，也会立马就在解析器里面转换吗？
-        //这是解码操作，10个字节可能由几百张图片，因为h264编码的压缩率高，假设YUV右一帧300B转成3B,则能解码出完整的一帧需要3B,但最后刚好留下了10B,那
-        //也会放入解码器中去解码吗？若放入进行解码，则无法解码出整数帧
-        while(inLen > 0 || inEnd){
-            //经过解析器上下文处理:解析器去切inLen中的数据，切多少就是多少返回给ret
-            //可能解析器切了连续几段，都没有交给pkt，这与H264的编码原理和文件结构有关系，最后集中了好几段之后一并发送给pkt
-            //所以不用担心解析器最后只剩10帧之后也直接解析，解析器自己会衡量后自己集中足够大的大小后再一起解析
-            //音频的aac解码也可以用此方法，不用再去增加缓冲区，拷贝前移
+        //经过解析器上下文处理
+        while(inLen > 0){
             ret = av_parser_parse2(parserCtx,ctx,&pkt->data,&pkt->size,(uint8_t *)inData,inLen,AV_NOPTS_VALUE,AV_NOPTS_VALUE,0);
+            qDebug() << "ctx开始解析采样率:" << ctx->sample_rate;
+            qDebug() << "ctx开始解析采样格式:" << av_get_sample_fmt_name(ctx->sample_fmt) << ctx->sample_fmt;
+            qDebug() << "ctx开始解析声道数:" << av_get_channel_layout_nb_channels(ctx->channel_layout) << ctx->channel_layout;
             if(ret < 0){
                 AV_ERROR(ret);
                 qDebug() << "av_parser_parse2 error" << errorbuf;
                 goto end;
             }
-            //跳过已经解析过的数据
             inData += ret;
-            //减去已经解析过的数据大小
             inLen -= ret;
-            //pkt大小 和 已经解析过的数据的大小
-            qDebug() << inEnd << pkt->size << ret;
             //解码
             if(pkt->size <= 0) continue;
             if(decode(ctx,pkt,frame,outFile) < 0){
                 goto end;
             }
-            //若到了文件尾部，跳出循环
-            if(inEnd) break;
         }
-    }while(!inEnd);
+    }
+//    while(inLen > 0){
+//        //初始化后pkt的大小
+////        qDebug() << "传入解析器之前pkt大小:" << pkt->size;
+//        //经过解析器上下文处理
+//        ret = av_parser_parse2(parserCtx,ctx,&pkt->data,&pkt->size,(uint8_t *)inData,inLen,AV_NOPTS_VALUE,AV_NOPTS_VALUE,0);
+//        qDebug() << "ctx开始解析采样率:" << ctx->sample_rate;
+//        qDebug() << "ctx开始解析采样格式:" << av_get_sample_fmt_name(ctx->sample_fmt) << ctx->sample_fmt;
+//        qDebug() << "ctx开始解析声道数:" << av_get_channel_layout_nb_channels(ctx->channel_layout) << ctx->channel_layout;
+//        if(ret < 0){
+//            AV_ERROR(ret);
+//            qDebug() << "av_parser_parse2 error" << errorbuf;
+//            goto end;
+//        }
+//        inData += ret;
+//        inLen -= ret;
+//        //解码
+//        if(pkt->size <= 0) continue;
+//        if(decode(ctx,pkt,frame,outFile) < 0){
+//            goto end;
+//        }
+//        //如果数据不够了，再次读取数据
+//        if(inLen < REFILL_THRESH && !inEnd){
+//            //剩余数据移动到缓冲区前
+//            memmove(inDataArray,inData,inLen);
+//            inData = inDataArray;
+//            //跨过已有数据，读取文件
+//            int len = inFile.read(inData + inLen,IN_DATA_SIZE - inLen);
+//            if(len > 0){
+//                inLen += len;
+//            }else if(len == 0){
+//               inEnd = 1;
+//            }
+//        }
+//    }
     //刷新解码器
     //pkt->data = NULL;
     //pkt->size = 0;
     decode(ctx,nullptr,frame,outFile);
-    out.width = ctx->width;
-    out.height = ctx->height;
-    out.pixFmt = ctx->pix_fmt;
-    out.fps = ctx->framerate.num;
+    //设置输出参数,若不设置采样率：1，采样格式：u8,声道数：14,但能正常播放
+    //ctx打开关联解码器知道采样格式s16,开始解析后知道采样率44100和声道数2
+    out.sampleFmt = ctx->sample_fmt;
+    out.chLayout = ctx->channel_layout;
+    out.sampleRate = ctx->sample_rate;
 end:
     inFile.close();
     outFile.close();
